@@ -3,6 +3,7 @@
 // Github: https://github.com/Hailey-Ross/hails.Monitor
 // PLEASE LEAVE ALL CREDITS/COMMENTS INTACT
 // Scans the entire sim, stores avatars with detection timestamps, and responds to "show me" and "hails clear" and "hails reset" commands for allowed users.
+// The time stuff is ugly, don't look pls
 
 list avatar_list = []; // Store avatars, UUIDs, and timestamps
 integer scan_interval = 5; // Scan interval in seconds

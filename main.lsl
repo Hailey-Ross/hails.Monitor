@@ -29,16 +29,11 @@ default {
                 key avatar_key = llList2Key(agents, i);
                 string avatar_name = llKey2Name(avatar_key);
 
-                // Get the current date in UTC
+                // Get the current date in PST/PDT
                 string date = llGetDate();
-
-                // Get Pacific Time in seconds since midnight using llGetWallclock()
                 float pacific_time = llGetWallclock();
 
-                // Adjust for UTC: Add 7 hours for PDT
                 float utc_time = pacific_time + (7 * 3600); // Adjusting for PDT (add 7 hours)
-
-                // Handle time overflow (if adding time goes past 24 hours)
                 if (utc_time >= 86400) {
                     utc_time -= 86400; // Subtract a full day (24 hours in seconds)
                     date = llGetSubString(llGetDate(), 0, 9); // Adjust to the next day
@@ -85,7 +80,6 @@ default {
     listen(integer channel, string name, key id, string message) {
         // Check if the sender is allowed to use the commands
         if (id == llGetOwner() || llListFindList(allowed_users, [id]) != -1) {
-            // Respond to the owner's or allowed user's "show me" command
             if (llToLower(message) == "show me") {
                 integer count = llGetListLength(avatar_list);
                 if (count == 0) {
@@ -101,7 +95,6 @@ default {
                     }
                 }
             }
-            // Respond to the "hails clear" command to clear the avatar list
             else if (llToLower(message) == "hails clear") {
                 avatar_list = []; // Clear the avatar list
                 llInstantMessage(id, "Avatar list has been cleared.");
@@ -112,7 +105,6 @@ default {
                 llResetScript();
             }
         } else {
-            // If the user is not allowed
             llInstantMessage(id, "Access denied.");
         }
     }

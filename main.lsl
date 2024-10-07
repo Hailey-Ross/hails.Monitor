@@ -2,7 +2,6 @@
 // Site: https://u.hails.cc/Links
 // Github: https://github.com/Hailey-Ross/hails.Monitor
 // PLEASE LEAVE ALL CREDITS/COMMENTS INTACT
-// Sim-wide Avatar Scanner (with allowed users receiving messages)
 // Scans the entire sim, stores avatars with detection timestamps, and responds to "show me" and "hails clear" and "hails reset" commands for allowed users.
 
 list avatar_list = []; // Store avatars, UUIDs, and timestamps

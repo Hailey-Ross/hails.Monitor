@@ -1,8 +1,8 @@
-//Script Created by Hailey Enfield
-//Site: https://u.hails.cc/Links
-//Github: https://github.com/Hailey-Ross/hails.Monitor
-//PLEASE LEAVE ALL CREDITS/COMMENTS INTACT
-// LSL Script: Sim-wide Avatar Scanner (with allowed users receiving messages)
+// Script Created by Hailey Enfield
+// Site: https://u.hails.cc/Links
+// Github: https://github.com/Hailey-Ross/hails.Monitor
+// PLEASE LEAVE ALL CREDITS/COMMENTS INTACT
+// Sim-wide Avatar Scanner (with allowed users receiving messages)
 // Scans the entire sim, stores avatars with detection timestamps, and responds to "show me" and "hails clear" commands for allowed users.
 
 list avatar_list = []; // Store avatars, UUIDs, and timestamps

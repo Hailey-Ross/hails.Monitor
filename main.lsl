@@ -6,11 +6,15 @@
 // Say "hails info" in public chat for Command List
 // The time stuff is ugly, don't look pls
 
-list avatar_list = [];
+list avatar_list = []; // This will store names, UUIDs, first seen and last seen times
 integer scan_interval = 5;
-list allowed_users = ["0fc458f0-50c4-4d6f-95a6-965be6e977ad", "00000000-0000-0000-0000-000000000000"];
-integer im_notifications_enabled = FALSE; //default state of IM Notifications
+list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"];
+integer im_notifications_enabled = FALSE; // Default state of IM Notifications
 integer command_channel = 2;
+integer max_avatar_count = 250; // Maximum number of avatars to track
+
+float last_notification_time = 0.0; // Track the last time an IM notification was sent
+integer notification_cooldown = 60; // Cooldown period in seconds for IM notifications
 
 default {
     state_entry() {
@@ -75,13 +79,24 @@ default {
                 integer index = llListFindList(avatar_list, [avatar_name, (string)avatar_key]);
                 if (index == -1) {
                     avatar_list += [avatar_name, (string)avatar_key, detection_time, detection_time]; // First seen and last seen
-                    if (im_notifications_enabled) {
+
+                    // Check if avatar_list exceeds the maximum count
+                    if (llGetListLength(avatar_list) > max_avatar_count * 4) { // Each avatar has 4 entries
+                        // Remove the oldest avatar's entries
+                        avatar_list = llListReplaceList(avatar_list, [], 0, 3); // Remove the oldest avatar's entries
+                    }
+
+                    // Send notification if enabled and cooldown has expired
+                    if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
                         llInstantMessage(llGetOwner(), "New Visitor detected: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
+                        last_notification_time = llGetTime(); // Update the last notification time
                     }
                 } else {
                     avatar_list = llListReplaceList(avatar_list, [detection_time], index + 3, index + 3); // Update Last Seen
-                    if (im_notifications_enabled) {
+                    // Send update notification if enabled and cooldown has expired
+                    if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
                         llInstantMessage(llGetOwner(), "Visitor updated: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
+                        last_notification_time = llGetTime(); // Update the last notification time
                     }
                 }
             }

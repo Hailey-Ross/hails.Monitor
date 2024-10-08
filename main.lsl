@@ -8,7 +8,7 @@
 
 list avatar_list = []; // This will store names, UUIDs, first seen and last seen times
 integer scan_interval = 5;
-list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"];
+list allowed_users = ["0fc458f0-50c4-4d6f-95a6-965be6e977ad", "00000000-0000-0000-0000-000000000000"];
 integer im_notifications_enabled = FALSE; // Default state of IM Notifications
 integer command_channel = 2;
 integer max_avatar_count = 250; // Maximum number of avatars to track
@@ -121,7 +121,7 @@ default {
                 if (count == 0) {
                     llInstantMessage(id, "No avatars have been detected.");
                 } else {
-                    string output = "Detected " + (string)(count / 4) + " visitor(s):\n"; // 4 items per avatar
+                    string output = "Hails.Scanner \nDetected " + (string)(count / 4) + " visitor(s):\n"; // 4 items per avatar
                     integer i;
                     for (i = 0; i < count; i += 4) { // Iterate through the list (name, UUID, first seen, last seen)
                         string avatar_name = llList2String(avatar_list, i);

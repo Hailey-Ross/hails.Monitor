@@ -2,48 +2,52 @@
 // Site: https://u.hails.cc/Links
 // Github: https://github.com/Hailey-Ross/hails.Monitor
 // PLEASE LEAVE ALL CREDITS/COMMENTS INTACT
-// Scans the entire sim, stores avatars with detection timestamps, and responds to "show me" and "hails clear" and "hails reset" commands for allowed users.
+// Scans the entire sim, stores avatars with detection timestamps
+// Commands:"show me" and "hails clear" and "hails reset" 
 // The time stuff is ugly, don't look pls
 
-list avatar_list = []; // Store avatars, UUIDs, and timestamps
-integer scan_interval = 5; // Scan interval in seconds
-list allowed_users = ["UUID1", "UUID2"]; // Add UUIDs of users you want to allow to use commands
+list avatar_list = [];
+integer scan_interval = 5;
+list allowed_users = ["UUID1", "UUID2"];
+integer im_notifications_enabled = FALSE;
+integer command_channel = 2;
 
 default {
     state_entry() {
-        llOwnerSay("Hails.Scanner is online.");
-        llSetTimerEvent(scan_interval); // Set the timer for periodic scans
-        llListen(0, "", llGetOwner(), ""); // Listen for commands from the owner only
+        if (im_notifications_enabled) {
+            llOwnerSay("Hails.Scanner is online. \nIM notifications are enabled.");
+        } else {
+            llOwnerSay("Hails.Scanner is online. \nIM notifications are disabled.");
+        }
+        llSetTimerEvent(scan_interval);
+        llListen(0, "", llGetOwner(), "");
+        llListen(command_channel, "", llGetOwner(), "");
     }
 
     timer() {
-        // Use llGetAgentList to get all avatars in the sim
         list agents = llGetAgentList(AGENT_LIST_REGION, []);
         integer count = llGetListLength(agents);
 
         if (count == 0) {
-            llWhisper(0, "No avatars detected in the region.");;
+            llWhisper(0, "No avatars detected in the region.");
         } else {
             integer i;
             for (i = 0; i < count; ++i) {
                 key avatar_key = llList2Key(agents, i);
                 string avatar_name = llKey2Name(avatar_key);
-
-                // Get the current date in PST/PDT
                 string date = llGetDate();
                 float pacific_time = llGetWallclock();
+                float utc_time = pacific_time + (7 * 3600);
 
-                float utc_time = pacific_time + (7 * 3600); // Adjusting for PDT (add 7 hours)
                 if (utc_time >= 86400) {
-                    utc_time -= 86400; // Subtract a full day (24 hours in seconds)
-                    date = llGetSubString(llGetDate(), 0, 9); // Adjust to the next day
+                    utc_time -= 86400;
+                    date = llGetSubString(llGetDate(), 0, 9);
                 }
 
                 integer hours = (integer)utc_time / 3600;
                 integer minutes = ((integer)utc_time % 3600) / 60;
                 integer seconds = (integer)utc_time % 60;
 
-                // Properly format time into HH:MM:SS using if statements for leading zeroes
                 string formatted_hours;
                 if (hours < 10) {
                     formatted_hours = "0" + (string)hours;
@@ -66,43 +70,60 @@ default {
                 }
 
                 string formatted_time = formatted_hours + ":" + formatted_minutes + ":" + formatted_seconds;
-
                 string detection_time = date + " " + formatted_time + " UTC";
 
-                // Avoid adding duplicates
                 if (llListFindList(avatar_list, [avatar_name, (string)avatar_key]) == -1) {
-                    avatar_list += [avatar_name, (string)avatar_key, detection_time]; // Store name, UUID, and detection time in UTC
+                    avatar_list += [avatar_name, (string)avatar_key, detection_time];
+                    if (im_notifications_enabled) {
+                        llInstantMessage(llGetOwner(), "New avatar detected: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
+                    }
                 }
             }
         }
     }
 
     listen(integer channel, string name, key id, string message) {
-        // Check if the sender is allowed to use the commands
-        if (id == llGetOwner() || llListFindList(allowed_users, [id]) != -1) {
-            if (llToLower(message) == "show me") {
+        message = llToLower(message);
+
+        if (channel == command_channel && id == llGetOwner()) {
+            if (message == "toggle im") {
+                im_notifications_enabled = !im_notifications_enabled;
+                if (im_notifications_enabled) {
+                    llOwnerSay("IM notifications are now enabled.");
+                } else {
+                    llOwnerSay("IM notifications are now disabled.");
+                }
+            }
+        } else if (channel == 0 && (id == llGetOwner() || llListFindList(allowed_users, [id]) != -1)) {
+            if (message == "show me") {
                 integer count = llGetListLength(avatar_list);
                 if (count == 0) {
                     llInstantMessage(id, "No avatars have been detected.");
                 } else {
                     llInstantMessage(id, "Detected " + (string)(count / 3) + " visitor(s):");
                     integer i;
-                    for (i = 0; i < count; i += 3) { // Iterate through the list (name, UUID, timestamp)
+                    for (i = 0; i < count; i += 3) {
                         string avatar_name = llList2String(avatar_list, i);
                         string avatar_key = llList2String(avatar_list, i + 1);
                         string detection_time = llList2String(avatar_list, i + 2);
                         llInstantMessage(id, "Name: " + avatar_name + " \nFirst seen: " + detection_time);
                     }
                 }
-            }
-            else if (llToLower(message) == "hails clear") {
-                avatar_list = []; // Clear the avatar list
+            } else if (message == "hails clear") {
+                avatar_list = [];
                 llInstantMessage(id, "Avatar list has been cleared.");
-            }
-            else if (llToLower(message) == "hails reset") {
-                avatar_list = []; // Clear the avatar list
+            } else if (message == "hails reset") {
+                avatar_list = [];
                 llInstantMessage(id, "Rebooting Hails.Scanner..");
                 llResetScript();
+            } else if (message == "hails info") {
+                llInstantMessage(id,
+                    "Hails.Scanner Commands:\n" +
+                    "• 'show me' - Displays detected avatars and their first detection time.\n" +
+                    "• 'hails clear' - Clears the avatar list.\n" +
+                    "• 'hails reset' - Resets the script.\n" +
+                    "• 'toggle im' - (Owner Only) Toggles IM notifications for new avatar detection."
+                );
             }
         } else {
             llInstantMessage(id, "Access denied.");

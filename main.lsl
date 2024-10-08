@@ -8,7 +8,7 @@
 
 list avatar_list = [];
 integer scan_interval = 5;
-list allowed_users = ["UUID1", "UUID2"];
+list allowed_users = ["744edc33-2766-4553-8593-a66fc07762aa", "7ec20f37-71f4-4c75-b7b7-437a1aee837d"];
 integer im_notifications_enabled = FALSE;
 integer command_channel = 2;
 
@@ -122,7 +122,8 @@ default {
                     "• 'show me' - Displays detected avatars and their first detection time.\n" +
                     "• 'hails clear' - Clears the avatar list.\n" +
                     "• 'hails reset' - Resets the script.\n" +
-                    "• 'toggle im' - (Owner Only) Toggles IM notifications for new avatar detection."
+                    "• '/"
+                    + (string)command_channel + " toggle im' - (Owner Only) Toggles IM notifications for new avatar detection."
                 );
             }
         } else {

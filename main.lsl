@@ -3,13 +3,13 @@
 // Github: https://github.com/Hailey-Ross/hails.Monitor
 // PLEASE LEAVE ALL CREDITS/COMMENTS INTACT
 // Scans the entire sim, stores avatars with detection timestamps
-// Commands:"show me", "hails clear", "hails reset", "hails info" and "toggle im"
+// Say "hails info" in public chat for Command List
 // The time stuff is ugly, don't look pls
 
 list avatar_list = [];
 integer scan_interval = 5;
 list allowed_users = ["0fc458f0-50c4-4d6f-95a6-965be6e977ad", "00000000-0000-0000-0000-000000000000"];
-integer im_notifications_enabled = FALSE;
+integer im_notifications_enabled = FALSE; //default state of IM Notifications
 integer command_channel = 2;
 
 default {
@@ -72,10 +72,16 @@ default {
                 string formatted_time = formatted_hours + ":" + formatted_minutes + ":" + formatted_seconds;
                 string detection_time = date + " " + formatted_time + " UTC";
 
-                if (llListFindList(avatar_list, [avatar_name, (string)avatar_key]) == -1) {
-                    avatar_list += [avatar_name, (string)avatar_key, detection_time];
+                integer index = llListFindList(avatar_list, [avatar_name, (string)avatar_key]);
+                if (index == -1) {
+                    avatar_list += [avatar_name, (string)avatar_key, detection_time, detection_time]; // First seen and last seen
                     if (im_notifications_enabled) {
-                        llInstantMessage(llGetOwner(), "New avatar detected: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
+                        llInstantMessage(llGetOwner(), "New Visitor detected: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
+                    }
+                } else {
+                    avatar_list = llListReplaceList(avatar_list, [detection_time], index + 3, index + 3); // Update Last Seen
+                    if (im_notifications_enabled) {
+                        llInstantMessage(llGetOwner(), "Visitor updated: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
                     }
                 }
             }
@@ -100,13 +106,23 @@ default {
                 if (count == 0) {
                     llInstantMessage(id, "No avatars have been detected.");
                 } else {
-                    llInstantMessage(id, "Detected " + (string)(count / 3) + " visitor(s):");
+                    string output = "Detected " + (string)(count / 4) + " visitor(s):\n"; // 4 items per avatar
                     integer i;
-                    for (i = 0; i < count; i += 3) {
+                    for (i = 0; i < count; i += 4) { // Iterate through the list (name, UUID, first seen, last seen)
                         string avatar_name = llList2String(avatar_list, i);
                         string avatar_key = llList2String(avatar_list, i + 1);
-                        string detection_time = llList2String(avatar_list, i + 2);
-                        llInstantMessage(id, "Name: " + avatar_name + " \nFirst seen: " + detection_time);
+                        string first_seen = llList2String(avatar_list, i + 2);
+                        string last_seen = llList2String(avatar_list, i + 3);
+                        output += "Name: " + avatar_name + "\nFirst seen: " + first_seen + "\nLast seen: " + last_seen + "\n\n";
+
+                        // Check message length and send if necessary
+                        if (llStringLength(output) > 950) { // Allow some buffer for the next addition
+                            llInstantMessage(id, output);
+                            output = ""; // Reset output after sending
+                        }
+                    }
+                    if (output != "") { // Send any remaining output
+                        llInstantMessage(id, output);
                     }
                 }
             } else if (message == "hails clear") {
@@ -119,8 +135,8 @@ default {
             } else if (message == "hails info") {
                 llInstantMessage(id,
                     "Hails.Scanner Commands:\n" +
-                    "• 'show me' - Displays detected avatars and their first detection time.\n" +
-                    "• 'hails clear' - Clears the avatar list.\n" +
+                    "• 'show me' - Displays detected avatars and their first and last detection times.\n" +
+                    "• 'hails clear' - Clears the visitor list.\n" +
                     "• 'hails reset' - Resets the script.\n" +
                     "• '/"
                     + (string)command_channel + " toggle im' - (Owner Only) Toggles IM notifications for new avatar detection."

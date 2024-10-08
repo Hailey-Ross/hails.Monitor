@@ -3,12 +3,12 @@
 // Github: https://github.com/Hailey-Ross/hails.Monitor
 // PLEASE LEAVE ALL CREDITS/COMMENTS INTACT
 // Scans the entire sim, stores avatars with detection timestamps
-// Commands:"show me" and "hails clear" and "hails reset" 
+// Commands:"show me", "hails clear", "hails reset", "hails info" and "toggle im"
 // The time stuff is ugly, don't look pls
 
 list avatar_list = [];
 integer scan_interval = 5;
-list allowed_users = ["744edc33-2766-4553-8593-a66fc07762aa", "7ec20f37-71f4-4c75-b7b7-437a1aee837d"];
+list allowed_users = ["0fc458f0-50c4-4d6f-95a6-965be6e977ad", "00000000-0000-0000-0000-000000000000"];
 integer im_notifications_enabled = FALSE;
 integer command_channel = 2;
 

@@ -10,7 +10,7 @@ list allowed_users = ["744edc33-2766-4553-8593-a66fc07762aa", "7ec20f37-71f4-4c7
 integer scan_interval = 5; // How often to scan
 integer im_notifications_enabled = FALSE; // Default state of IM Notifications
 integer command_channel = 2; // IM Toggle command channel
-integer max_avatar_count = 250; // Maximum number of avatars to track
+integer max_avatar_count = 250; // Maximum number of avatars to output
 integer notification_cooldown = 60; // Cooldown period in seconds for IM notifications
 
 //          DO NOT TOUCH

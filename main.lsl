@@ -83,26 +83,22 @@ default {
 
                 integer index = llListFindList(avatar_list, [avatar_name, (string)avatar_key]);
                 if (index == -1) {
-                    avatar_list += [avatar_name, (string)avatar_key, detection_time, detection_time]; // First seen and last seen
-                    total_visitor_count++; // Increment total visitor count
+                    avatar_list += [avatar_name, (string)avatar_key, detection_time, detection_time];
+                    total_visitor_count++;
 
-                    // Check if avatar_list exceeds the maximum count
-                    if (llGetListLength(avatar_list) > max_avatar_count * 4) { // Each avatar has 4 entries
-                        // Remove the oldest avatar's entries
-                        avatar_list = llListReplaceList(avatar_list, [], 0, 3); // Remove the oldest avatar's entries
+                    if (llGetListLength(avatar_list) > max_avatar_count * 4) {
+                        avatar_list = llListReplaceList(avatar_list, [], 0, 3);
                     }
 
-                    // Send notification if enabled and cooldown has expired
                     if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
                         llInstantMessage(llGetOwner(), "New Visitor detected: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
-                        last_notification_time = llGetTime(); // Update the last notification time
+                        last_notification_time = llGetTime();
                     }
                 } else {
-                    avatar_list = llListReplaceList(avatar_list, [detection_time], index + 3, index + 3); // Update Last Seen
-                    // Send update notification if enabled and cooldown has expired
+                    avatar_list = llListReplaceList(avatar_list, [detection_time], index + 3, index + 3);
                     if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
                         llInstantMessage(llGetOwner(), "Visitor updated: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
-                        last_notification_time = llGetTime(); // Update the last notification time
+                        last_notification_time = llGetTime();
                     }
                 }
             }
@@ -127,33 +123,32 @@ default {
                 if (count == 0) {
                     llInstantMessage(id, "No avatars have been detected.");
                 } else {
-                    string output = "Total unique visitors tracked: " + (string)total_visitor_count + "\n"; // Total visitors count
-                    output += "Displaying " + (string)(count / 4) + " most recent visitor(s):\n"; // 4 items per avatar
+                    string output = "Total unique visitors tracked: " + (string)total_visitor_count + "\n";
+                    output += "Displaying " + (string)(count / 4) + " recent visitor(s):\n";
                     integer i;
-                    for (i = 0; i < count; i += 4) { // Iterate through the list (name, UUID, first seen, last seen)
+                    for (i = 0; i < count; i += 4) {
                         string avatar_name = llList2String(avatar_list, i);
                         string avatar_key = llList2String(avatar_list, i + 1);
                         string first_seen = llList2String(avatar_list, i + 2);
                         string last_seen = llList2String(avatar_list, i + 3);
                         output += "Name: " + avatar_name + "\nFirst seen: " + first_seen + "\nLast seen: " + last_seen + "\n\n";
 
-                        // Check message length and send if necessary
-                        if (llStringLength(output) > 950) { // Allow some buffer for the next addition
+                        if (llStringLength(output) > 950) {
                             llInstantMessage(id, output);
-                            output = ""; // Reset output after sending
+                            output = "";
                         }
                     }
-                    if (output != "") { // Send any remaining output
+                    if (output != "") {
                         llInstantMessage(id, output);
                     }
                 }
             } else if (message == "hails clear") {
                 avatar_list = [];
-                total_visitor_count = 0; // Reset total visitor count
+                total_visitor_count = 0;
                 llInstantMessage(id, "Avatar list has been cleared.");
             } else if (message == "hails reset") {
                 avatar_list = [];
-                total_visitor_count = 0; // Reset total visitor count
+                total_visitor_count = 0;
                 llInstantMessage(id, "Rebooting Hails.Scanner..");
                 llResetScript();
             } else if (message == "hails info") {

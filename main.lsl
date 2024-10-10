@@ -18,11 +18,12 @@ integer notification_cooldown = 60;
 
 list avatar_list = []; 
 integer total_visitor_count = 0; 
-string scanner_name = "Hails.Scanner"; 
+string scanner_name; 
 float last_notification_time = 0.0; 
 
 default {
     state_entry() {
+        string scanner_name = "hails.Monitor";
         if (im_notifications_enabled) {
             llOwnerSay(scanner_name + " is online. \nIM notifications are enabled.");
         } else {

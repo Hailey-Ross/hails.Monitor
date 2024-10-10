@@ -6,15 +6,20 @@
 // Say "hails info" in public chat for Command List
 // The time stuff is ugly, don't look pls
 
-list avatar_list = []; // This will store names, UUIDs, first seen and last seen times
-integer scan_interval = 5;
-list allowed_users = ["0fc458f0-50c4-4d6f-95a6-965be6e977ad", "00000000-0000-0000-0000-000000000000"];
+list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"]; // Who else can check the visitor list? UUID's only
+integer scan_interval = 5; // How often to scan
 integer im_notifications_enabled = FALSE; // Default state of IM Notifications
-integer command_channel = 2;
+integer command_channel = 2; // IM Toggle command channel
 integer max_avatar_count = 250; // Maximum number of avatars to track
-
-float last_notification_time = 0.0; // Track the last time an IM notification was sent
 integer notification_cooldown = 60; // Cooldown period in seconds for IM notifications
+
+
+//          DO NOT TOUCH
+// Unless you know what you are doing
+
+list avatar_list = [];
+integer total_visitor_count = 0; 
+float last_notification_time = 0.0; 
 
 default {
     state_entry() {
@@ -79,6 +84,7 @@ default {
                 integer index = llListFindList(avatar_list, [avatar_name, (string)avatar_key]);
                 if (index == -1) {
                     avatar_list += [avatar_name, (string)avatar_key, detection_time, detection_time]; // First seen and last seen
+                    total_visitor_count++; // Increment total visitor count
 
                     // Check if avatar_list exceeds the maximum count
                     if (llGetListLength(avatar_list) > max_avatar_count * 4) { // Each avatar has 4 entries
@@ -121,7 +127,8 @@ default {
                 if (count == 0) {
                     llInstantMessage(id, "No avatars have been detected.");
                 } else {
-                    string output = "Hails.Scanner \nDetected " + (string)(count / 4) + " visitor(s):\n"; // 4 items per avatar
+                    string output = "Total unique visitors tracked: " + (string)total_visitor_count + "\n"; // Total visitors count
+                    output += "Displaying " + (string)(count / 4) + " most recent visitor(s):\n"; // 4 items per avatar
                     integer i;
                     for (i = 0; i < count; i += 4) { // Iterate through the list (name, UUID, first seen, last seen)
                         string avatar_name = llList2String(avatar_list, i);
@@ -142,9 +149,11 @@ default {
                 }
             } else if (message == "hails clear") {
                 avatar_list = [];
+                total_visitor_count = 0; // Reset total visitor count
                 llInstantMessage(id, "Avatar list has been cleared.");
             } else if (message == "hails reset") {
                 avatar_list = [];
+                total_visitor_count = 0; // Reset total visitor count
                 llInstantMessage(id, "Rebooting Hails.Scanner..");
                 llResetScript();
             } else if (message == "hails info") {

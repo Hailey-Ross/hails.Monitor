@@ -6,27 +6,27 @@
 // Say "hails info" in public chat for Command List
 // The time stuff is ugly, don't look pls
 
-list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"]; // Who else can check the visitor list? UUID's only
-integer scan_interval = 5; // How often to scan
-integer im_notifications_enabled = FALSE; // Default state of IM Notifications
-integer command_channel = 2; // IM Toggle command channel
-integer max_avatar_count = 250; // Maximum number of avatars to track
-integer notification_cooldown = 60; // Cooldown period in seconds for IM notifications
-
+list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"]; 
+integer scan_interval = 5; 
+integer im_notifications_enabled = FALSE; 
+integer command_channel = 2; 
+integer max_avatar_count = 250; 
+integer notification_cooldown = 60; 
 
 //          DO NOT TOUCH
 // Unless you know what you are doing
 
-list avatar_list = [];
+list avatar_list = []; 
 integer total_visitor_count = 0; 
+string scanner_name = "Hails.Scanner"; 
 float last_notification_time = 0.0; 
 
 default {
     state_entry() {
         if (im_notifications_enabled) {
-            llOwnerSay("Hails.Scanner is online. \nIM notifications are enabled.");
+            llOwnerSay(scanner_name + " is online. \nIM notifications are enabled.");
         } else {
-            llOwnerSay("Hails.Scanner is online. \nIM notifications are disabled.");
+            llOwnerSay(scanner_name + " is online. \nIM notifications are disabled.");
         }
         llSetTimerEvent(scan_interval);
         llListen(0, "", llGetOwner(), "");
@@ -149,11 +149,11 @@ default {
             } else if (message == "hails reset") {
                 avatar_list = [];
                 total_visitor_count = 0;
-                llInstantMessage(id, "Rebooting Hails.Scanner..");
+                llInstantMessage(id, "Rebooting " + scanner_name + "..");
                 llResetScript();
             } else if (message == "hails info") {
                 llInstantMessage(id,
-                    "Hails.Scanner Commands:\n" +
+                    scanner_name + " Commands:\n" +
                     "• 'show me' - Displays detected avatars and their first and last detection times.\n" +
                     "• 'hails clear' - Clears the visitor list.\n" +
                     "• 'hails reset' - Resets the script.\n" +

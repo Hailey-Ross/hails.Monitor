@@ -6,11 +6,11 @@
 // Say "hails info" in public chat for Command List
 // The time stuff is ugly, don't look pls
 
-list allowed_users = ["744edc33-2766-4553-8593-a66fc07762aa", "7ec20f37-71f4-4c75-b7b7-437a1aee837d"]; // Who else can check the visitor list? UUID's only
+list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"]; // Who else can check the visitor list? UUID's only
 integer scan_interval = 5; // How often to scan
 integer im_notifications_enabled = FALSE; // Default state of IM Notifications
 integer command_channel = 2; // IM Toggle command channel
-integer max_avatar_count = 250; // Maximum number of avatars to output
+integer max_avatar_count = 250; // Maximum number of avatars to track
 integer notification_cooldown = 60; // Cooldown period in seconds for IM notifications
 
 //          DO NOT TOUCH

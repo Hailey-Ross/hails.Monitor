@@ -132,7 +132,7 @@ default {
                         string avatar_key = llList2String(avatar_list, i + 1);
                         string first_seen = llList2String(avatar_list, i + 2);
                         string last_seen = llList2String(avatar_list, i + 3);
-                        output += "Name: " + avatar_name + "\nFirst seen: " + first_seen + "\nLast seen: " + last_seen + "\n\n";
+                        output += "Name: " + avatar_name + "\nUUID: " + avatar_key + "\nFirst seen: " + first_seen + "\nLast seen: " + last_seen + "\n\n";
 
                         if (llStringLength(output) > 950) {
                             llInstantMessage(id, output);

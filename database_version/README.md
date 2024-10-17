@@ -9,4 +9,5 @@ You will need:
 
 Do NOT:  
 - Request Help  
-- host your Config in a non-secure directory  
+- host your `config.php` in a non-secure directory
+- Share your API-Key

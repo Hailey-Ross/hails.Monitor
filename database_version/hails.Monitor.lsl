@@ -5,7 +5,7 @@
 // Scans the entire sim, stores avatars with detection timestamps and region
 // Say "hails info" in public chat for Command List
 
-list allowed_users = ["00000000-0000-0000-0000-000000000000"]; // Who else can check the visitor list? UUID's only
+list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000",]; // Who else can check the visitor list? UUID's only
 integer scan_interval = 5; // How often to scan
 integer command_channel = 2; // IM Toggle command channel
 integer max_avatar_count = 250; // Maximum number of visitors to output

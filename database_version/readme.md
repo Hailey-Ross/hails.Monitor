@@ -5,3 +5,7 @@ You will need:
 - Webserver
 - Database Server
 - Basic Database knowledge
+
+Do NOT:
+- Request Help
+- host your Config in a non-secure directory

@@ -1,0 +1,4 @@
+<Files "credentials_file">
+    Order allow,deny
+    Deny from all
+</Files>

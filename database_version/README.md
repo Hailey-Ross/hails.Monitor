@@ -20,11 +20,12 @@
 *The files will follow a similar layout to the repository you are viewing.*  
 *Everything inside of `PHP` will be the root of your webserver.*  
 
-1. **Download or Copy the PHP Files:**
+1. **Download or Copy the Files:**
    - Download or copy/paste the contents of the `PHP` folder to your computer for editing.
+   - Copy and Paste the `LSL` scripts into your inventory in Second Life.
 
 2. **Update the Server URL:**
-   - Update the URLs to point to your webserver, where you are hosting the PHP file `av.php`.  
+   - Update the scripts to point to your webserver, where you are hosting the PHP file `av.php`.  
    Example: `string server_url = "https://mysite.com/av.php";`  
    Files to edit: `hails.Lookup.lsl`, `hails.Monitor.lsl`
 
@@ -36,3 +37,12 @@
 4. **Place the .htaccess File:**
    - Do NOT forget to place the `.htaccess` file in the same directory as your `config.php` file.  
    - There is an **optional** `.htaccess` file included to remove directory listing for `av.php` if no index file is present in the same folder.
+
+5. **Run the LSL Scripts:**
+   - Place `hails.Monitor.lsl` and `hails.Lookup.lsl` in an object on your land with the edits from above.
+   - Say `hails info` into public chat for Commands.
+
+6. **Nothing is Happening?!**
+   - Say `/2 toggle debug` in public chat and quickly resend the command after 5-10 seconds.
+   - Read the output.
+   - [StackOverflow](https://stackoverflow.com/)

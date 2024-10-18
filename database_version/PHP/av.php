@@ -3,9 +3,6 @@
 // MAKE SURE TO SECURE THIS DIRECTORY
 require_once __DIR__ . '/priv/config.php';
 
-// Log incoming requests (for debugging purposes)
-file_put_contents('request_log.txt', print_r($_POST, true), FILE_APPEND);
-
 // Check for API key
 if (!isset($_POST['api_key']) || $_POST['api_key'] !== API_KEY) {
     die(json_encode(['error' => 'Unauthorized access']));
@@ -31,27 +28,59 @@ if ($action === 'store') {
     $first_seen = $conn->real_escape_string($_POST['first_seen'] ?? '');
     $last_seen = $conn->real_escape_string($_POST['last_seen'] ?? '');
 
-    // Log the data (optional, for debugging)
-    file_put_contents('data_log.txt', "Storing: $avatar_name, $avatar_key, $region_name, $first_seen, $last_seen\n", FILE_APPEND);
-
-    // Prepare SQL statement to insert or update avatar data
-    $stmt = $conn->prepare("INSERT INTO avatar_visits (avatar_name, avatar_key, region_name, first_seen, last_seen) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE last_seen=?");
+    // Prepare SQL statement to get the current region for the avatar
+    $stmt = $conn->prepare("SELECT region_name FROM avatar_visits WHERE avatar_key = ?");
     
     if ($stmt === false) {
         die(json_encode(['error' => 'SQL statement preparation failed: ' . $conn->error]));
     }
 
-    $stmt->bind_param("ssssss", $avatar_name, $avatar_key, $region_name, $first_seen, $last_seen, $last_seen);
-
-    // Execute the statement and handle errors
-    if ($stmt->execute()) {
-        echo json_encode(['success' => 'Record updated successfully']);
-    } else {
-        echo json_encode(['error' => $stmt->error]);
-    }
-
-    // Close the statement
+    $stmt->bind_param("s", $avatar_key);
+    $stmt->execute();
+    $stmt->bind_result($current_region);
+    $stmt->fetch();
     $stmt->close();
+
+    // Check if the region has changed
+    if ($current_region !== $region_name) {
+        // Update the avatar record with new region and timestamps
+        $stmt = $conn->prepare("INSERT INTO avatar_visits (avatar_name, avatar_key, region_name, first_seen, last_seen) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE region_name=?, last_seen=?");
+        
+        if ($stmt === false) {
+            die(json_encode(['error' => 'SQL statement preparation failed: ' . $conn->error]));
+        }
+
+        $stmt->bind_param("sssssss", $avatar_name, $avatar_key, $region_name, $first_seen, $last_seen, $region_name, $last_seen);
+
+        // Execute the statement and handle errors
+        if ($stmt->execute()) {
+            echo json_encode(['success' => 'Record updated successfully']);
+        } else {
+            echo json_encode(['error' => $stmt->error]);
+        }
+
+        // Close the statement
+        $stmt->close();
+    } else {
+        // If the region hasn't changed, just update the timestamps
+        $stmt = $conn->prepare("UPDATE avatar_visits SET last_seen = ? WHERE avatar_key = ?");
+        
+        if ($stmt === false) {
+            die(json_encode(['error' => 'SQL statement preparation failed: ' . $conn->error]));
+        }
+
+        $stmt->bind_param("ss", $last_seen, $avatar_key);
+
+        // Execute the statement and handle errors
+        if ($stmt->execute()) {
+            echo json_encode(['success' => 'Last seen updated successfully']);
+        } else {
+            echo json_encode(['error' => $stmt->error]);
+        }
+
+        // Close the statement
+        $stmt->close();
+    }
 
 // Handle avatar data querying
 } elseif ($action === 'query') {

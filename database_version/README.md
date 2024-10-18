@@ -4,7 +4,8 @@
 ---
 
 ## You will need:
-- Webserver  
+- Webserver
+   - [Server Hosting](https://letmegooglethat.com/?q=webhosting)  
 - Database  
 - Basic database knowledge  
 
@@ -34,20 +35,26 @@
    Example: `string API_KEY = "SECRET-API-KEY";`  
    Files to edit: `config.php`, `hails.Lookup.lsl`, `hails.Monitor.lsl`
 
-4. **Place the .htaccess File:**
-   - Do NOT forget to place the `.htaccess` file in the same directory as your `config.php` file.  
-   - There is an **optional** `.htaccess` file included to remove directory listings for `av.php` if no index file is present in the same folder.
+4. **Upload to your Webserver**
+   - Connect to your webserver using a FTP/SFTP Client
+   - Upload the edited contents of the `PHP` directory you edited to your webserver.
 
 5. **Run the SQL File:**
    - Connect to your database using your favorite SQL client (e.g., HeidiSQL, DBeaver, Oracle, MySQL Workbench).
    - Copy and paste the `run_me.sql` file from the `SQL` directory.
    - Run the file as a query to create your table.
 
-6. **Run the LSL Scripts:**
+6. **Check the .htaccess Files:**
+   - Do NOT forget to include the `.htaccess` file in the same directory as your `config.php` file.  
+   - There is an **optional** `.htaccess` file included with `av.php` if no index file is present in the same folder.
+   - Most setups will want these files or a variation in place.
+
+7. **Run the LSL Scripts:**
    - Place `hails.Monitor.lsl` and `hails.Lookup.lsl` in an object on your land with the edits from above.
+      - `hails.Lookup.lsl` can optionally be used seperately as standalone lookup script from the scanner.
    - Say `hails info` in public chat to view available commands.
 
-7. **Nothing is Happening?!**
+8. **Nothing is Happening?!**
    - Say `/2 toggle debug` in public chat and quickly resend the command after 5-10 seconds.
    - Read the output.
    - [StackOverflow](https://stackoverflow.com/) & [LSL Wiki](https://wiki.secondlife.com/wiki/LSL_Portal).

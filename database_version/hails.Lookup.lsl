@@ -1,8 +1,8 @@
 // Script Created by Hailey Enfield
 // Queries the server for avatar info by UUID
 
-string server_url = "https://YOUR-URL-HERE.com/av.php"; // URL to your PHP script that handles avatar queries
-string API_KEY = "YOUR-API-KEY"; // Define your API key here
+string server_url = "https://mon.hails.cc/hails.php"; // URL to your PHP script that handles avatar queries
+string API_KEY = "lrsckRmO3g4xo23wGg0JNu3hEab"; // Define your API key here
 integer waiting_for_response = FALSE; // Prevent multiple simultaneous requests
 
 // Function to request avatar info from the server
@@ -18,6 +18,8 @@ default {
     state_entry() {
         // Listen on channel 2 for private messages
         llListen(2, "", llGetOwner(), "");
+        // Listen on public channel for the info command
+        llListen(0, "", "", "");
     }
 
     listen(integer channel, string name, key id, string message) {
@@ -28,6 +30,10 @@ default {
                 // Extract the avatar key from the message
                 string avatar_key = llGetSubString(message, 11, -1);
                 requestAvatarInfo(avatar_key);
+            }
+            // Check if the command is 'hails info'
+            else if (llToLower(message) == "hails info") {
+                llOwnerSay("Lookup Commands:\n• 'get avatar <UUID>' - Retrieves information for the specified avatar UUID.");
             }
         }
     }

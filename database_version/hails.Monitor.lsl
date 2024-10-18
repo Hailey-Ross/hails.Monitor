@@ -5,16 +5,17 @@
 // Scans the entire sim, stores avatars with detection timestamps and region
 // Say "hails info" in public chat for Command List
 
-list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000",]; // Who else can check the visitor list? UUID's only
+list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"]; // Who else can check the visitor list? UUID's only
 integer scan_interval = 5; // How often to scan
 integer command_channel = 2; // IM Toggle command channel
 integer max_avatar_count = 250; // Maximum number of visitors to output
+integer batch_size = 5; // Number of avatars to send in each batch
 
 // Database Connection strings
-string server_url = "https://YOUR-SERVER-HERE.COM/av.php"; // Secure HTTPS URL
+string server_url = "https://YOUR-URL-HERE.com/av.php"; // Secure HTTPS URL
 string API_KEY = "YOUR-API-KEY"; // API Key for server communication
 
-//   DO  NOT  TOUCH  BELOW  HERE
+// DO NOT TOUCH BELOW HERE
 list avatar_list = []; 
 integer total_visitor_count = 0; 
 string scanner_name; 
@@ -31,26 +32,17 @@ debug(string message) {
     }
 }
 
-// Function to send avatar data to the server
-sendToServer(string avatar_name, string avatar_key, string region_name, string first_seen, string last_seen) {
-    // Remove " UTC" from the first_seen and last_seen timestamps
-    first_seen = llDeleteSubString(first_seen, -4, -1);
-    last_seen = llDeleteSubString(last_seen, -4, -1);
-
-    // Debugging to show the data being sent
-    debug("Sending avatar data: " + avatar_name + " (" + avatar_key + ") to server.");
-    debug("Region: " + region_name + ", First seen: " + first_seen + ", Last seen: " + last_seen);
-
-    string post_data = "api_key=" + API_KEY + "&action=store" + "&avatar_name=" + llEscapeURL(avatar_name) + "&avatar_key=" + avatar_key + "&region_name=" + llEscapeURL(region_name) + "&first_seen=" + llEscapeURL(first_seen) + "&last_seen=" + llEscapeURL(last_seen);
-    
-    debug("Sending HTTP request to: " + server_url + " with data: " + post_data); 
-    
+// Function to send avatar data in batches to the server
+sendBatchToServer() {
+    string post_data = "api_key=" + API_KEY + "&action=store_batch&data=" + llDumpList2String(avatar_list, ",");
+    debug("Sending batch to server with data: " + post_data);
     llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
+    avatar_list = []; // Clear the list after sending
 }
 
 default {
     state_entry() {
-        string scanner_name = "hails.Monitor";
+        scanner_name = "hails.Monitor";
         if (im_notifications_enabled) {
             llOwnerSay(scanner_name + " is online. \nIM notifications are enabled.");
         } else {
@@ -69,74 +61,51 @@ default {
         if (count == 0) {
             llWhisper(0, "No avatars detected in the region.");
         } else {
-            integer i;
-            for (i = 0; i < count; ++i) {
+            integer i; // Declare i here
+            for (i = 0; i < count; i++) { // Loop syntax corrected
                 key avatar_key = llList2Key(agents, i);
                 string avatar_name = llKey2Name(avatar_key);
                 string date = llGetDate();
                 float pacific_time = llGetWallclock();
                 float utc_time = pacific_time + (7 * 3600);
 
-                if (utc_time >= 86400) {
-                    utc_time -= 86400;
-                    date = llGetSubString(llGetDate(), 0, 9);
-                }
+                // Clean up the timestamps before sending to the database
+                string first_seen = llDeleteSubString(llGetTimestamp(), -4, -1);
+                string last_seen = llDeleteSubString(llGetTimestamp(), -4, -1);
 
                 integer hours = (integer)utc_time / 3600;
                 integer minutes = ((integer)utc_time % 3600) / 60;
                 integer seconds = (integer)utc_time % 60;
 
-                string formatted_hours;
-                if (hours < 10) {
-                    formatted_hours = "0" + (string)hours;
-                } else {
-                    formatted_hours = (string)hours;
-                }
-
-                string formatted_minutes;
-                if (minutes < 10) {
-                    formatted_minutes = "0" + (string)minutes;
-                } else {
-                    formatted_minutes = (string)minutes;
-                }
-
-                string formatted_seconds;
-                if (seconds < 10) {
-                    formatted_seconds = "0" + (string)seconds;
-                } else {
-                    formatted_seconds = (string)seconds;
-                }
-
-                string formatted_time = formatted_hours + ":" + formatted_minutes + ":" + formatted_seconds;
-                string detection_time = date + " " + formatted_time + " UTC";
+                string formatted_time = (string)hours + ":" + (string)minutes + ":" + (string)seconds;
+                string detection_time = date + " " + formatted_time; // Removed "UTC" to prevent the error
 
                 integer index = llListFindList(avatar_list, [avatar_name, (string)avatar_key]);
                 if (index == -1) {
-                    avatar_list += [avatar_name, (string)avatar_key, detection_time, detection_time];
+                    avatar_list += [avatar_name, (string)avatar_key, region_name, first_seen, last_seen];
                     total_visitor_count++;
 
-                    if (llGetListLength(avatar_list) > max_avatar_count * 4) {
-                        avatar_list = llListReplaceList(avatar_list, [], 0, 3);
+                    if (llGetListLength(avatar_list) >= batch_size * 5) {
+                        sendBatchToServer(); // Send batch if the limit is reached
                     }
 
                     if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
                         llInstantMessage(llGetOwner(), "New Visitor detected: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
                         last_notification_time = llGetTime();
                     }
-
-                    // Send the data to the server
-                    sendToServer(avatar_name, (string)avatar_key, region_name, detection_time, detection_time);
                 } else {
                     avatar_list = llListReplaceList(avatar_list, [detection_time], index + 3, index + 3);
                     if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
                         llInstantMessage(llGetOwner(), "Visitor updated: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
                         last_notification_time = llGetTime();
                     }
-
-                    // Update the server with the latest detection time
-                    sendToServer(avatar_name, (string)avatar_key, region_name, llList2String(avatar_list, index + 2), detection_time);
                 }
             }
+        }
+
+        // Send any remaining avatars after the timer event
+        if (llGetListLength(avatar_list) > 0) {
+            sendBatchToServer();
         }
     }
 
@@ -166,9 +135,9 @@ default {
                     llInstantMessage(id, "No avatars have been detected.");
                 } else {
                     string output = "Total unique visitors tracked: " + (string)total_visitor_count + "\n";
-                    output += "Displaying " + (string)(count / 4) + " recent visitor(s):\n";
+                    output += "Displaying " + (string)(count / 5) + " recent visitor(s):\n";
                     integer i;
-                    for (i = 0; i < count; i += 4) {
+                    for (i = 0; i < count; i += 5) {
                         string avatar_name = llList2String(avatar_list, i);
                         string avatar_key = llList2String(avatar_list, i + 1);
                         string first_seen = llList2String(avatar_list, i + 2);

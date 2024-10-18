@@ -1,3 +1,11 @@
+## Standalone Version
+**Pro's:**
+- Works out of the box.
+
+**Cons:**
+- Has major limitations.
+- Don't look at the time stuff please.
+
 ### List Output
 ![Example Output](https://github.com/user-attachments/assets/00944cda-4f1c-4ade-b947-5a393264cddb)
 

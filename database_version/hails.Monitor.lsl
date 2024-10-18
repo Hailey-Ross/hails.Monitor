@@ -9,7 +9,6 @@ list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-000
 integer scan_interval = 5; // How often to scan
 integer command_channel = 2; // IM Toggle command channel
 integer max_avatar_count = 250; // Maximum number of visitors to output
-integer batch_size = 5; // Number of avatars to send in each batch
 
 // Database Connection strings
 string server_url = "https://YOUR-URL-HERE.com/av.php"; // Secure HTTPS URL
@@ -25,6 +24,7 @@ integer waiting_for_response = FALSE;
 integer debug_enabled = FALSE;
 integer im_notifications_enabled = FALSE;
 integer notification_cooldown = 60;
+integer batch_size = 5; 
 
 // Debug function to handle whether to output or not
 debug(string message) {

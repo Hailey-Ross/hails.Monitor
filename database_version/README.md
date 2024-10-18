@@ -4,7 +4,7 @@
 ---
 You will need:  
 - Webserver  
-- Database Server  
+- Database  
 - Basic Database knowledge  
 
 Do NOT:  

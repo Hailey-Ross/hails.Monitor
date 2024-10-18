@@ -1,30 +1,38 @@
 # Database Version
 *This version of the script is provided as is.*
-  
+
 ---
-You will need:  
+
+## You will need:
 - Webserver  
 - Database  
-- Basic Database knowledge  
+- Basic database knowledge  
 
-Do NOT:  
-- Request Help  
-- host your `config.php` in a non-secure directory
-- Share your API-Key
+## Do NOT:
+- Request help  
+- Host your `config.php` in a non-secure directory  
+- Share your API key  
+
 ---
-### General setup
-**Note:**
-*The files will be follow a similar layout to the repository you are viewing.*  
+
+### General Setup
+**Note:**  
+*The files will follow a similar layout to the repository you are viewing.*  
 *Everything inside of `PHP` will be the root of your webserver.*  
-- Download or copy/paste the contents of `PHP` to your computer for editing.
 
-- Update the URL's to point to your webserver, this is where you are hosting the php file `av.php`  
-IE: `string server_url = "https://mysite.com/av.php";`  
-Files to edit: `hails.Lookup.lsl`, `hails.Monitor.lsl`  
-  
-- Next create, or make-up an API Key that must match in all locations and/or scripts.  
-IE: `string API_KEY = "SECRET-API-KEY";`  
-Files to edit: `config.php`, `hails.Lookup.lsl`, `hails.Monitor.lsl`  
+1. **Download or Copy the PHP Files:**
+   - Download or copy/paste the contents of the `PHP` folder to your computer for editing.
 
-- Do NOT forget to place the `.htaccess` file in the same directory as your `config.php` file.
-- There is an **optional** `.htaccess` file added to remove directory listing with `av.php` if no index is in the same folder.  
+2. **Update the Server URL:**
+   - Update the URLs to point to your webserver, where you are hosting the PHP file `av.php`.  
+   Example: `string server_url = "https://mysite.com/av.php";`  
+   Files to edit: `hails.Lookup.lsl`, `hails.Monitor.lsl`
+
+3. **Create an API Key:**
+   - Next, create or generate an API key that must match in all locations and/or scripts.  
+   Example: `string API_KEY = "SECRET-API-KEY";`  
+   Files to edit: `config.php`, `hails.Lookup.lsl`, `hails.Monitor.lsl`
+
+4. **Place the .htaccess File:**
+   - Do NOT forget to place the `.htaccess` file in the same directory as your `config.php` file.  
+   - There is an **optional** `.htaccess` file included to remove directory listing for `av.php` if no index file is present in the same folder.

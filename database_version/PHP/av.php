@@ -1,6 +1,5 @@
 <?php
 // Load database credentials from an external configuration file
-// MAKE SURE TO SECURE THIS DIRECTORY
 require_once __DIR__ . '/priv/config.php';
 
 // Check for API key
@@ -16,71 +15,55 @@ if ($conn->connect_error) {
     die(json_encode(['error' => 'Database connection failed: ' . $conn->connect_error]));
 }
 
-// Determine the action (store or query)
+// Determine the action (store_batch or query)
 $action = $_POST['action'] ?? '';
 
-// Handle avatar data storage
-if ($action === 'store') {
+// Handle avatar data storage in batches
+if ($action === 'store_batch') {
     // Retrieve and sanitize input data
-    $avatar_name = $conn->real_escape_string($_POST['avatar_name'] ?? '');
-    $avatar_key = $conn->real_escape_string($_POST['avatar_key'] ?? '');
-    $region_name = $conn->real_escape_string($_POST['region_name'] ?? '');
-    $first_seen = $conn->real_escape_string($_POST['first_seen'] ?? '');
-    $last_seen = $conn->real_escape_string($_POST['last_seen'] ?? '');
-
-    // Prepare SQL statement to get the current region for the avatar
-    $stmt = $conn->prepare("SELECT region_name FROM avatar_visits WHERE avatar_key = ?");
+    $data = isset($_POST['data']) ? $_POST['data'] : '';
     
+    // Convert the incoming data into an array
+    $avatars = explode(',', $data);
+    
+    // Prepare the SQL statement to insert or update avatar data
+    $stmt = $conn->prepare("INSERT INTO avatar_visits (avatar_name, avatar_key, region_name, first_seen, last_seen) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE avatar_name=?, region_name=?, last_seen=?");
+
     if ($stmt === false) {
         die(json_encode(['error' => 'SQL statement preparation failed: ' . $conn->error]));
     }
 
-    $stmt->bind_param("s", $avatar_key);
-    $stmt->execute();
-    $stmt->bind_result($current_region);
-    $stmt->fetch();
-    $stmt->close();
+    // Process each avatar entry
+    for ($i = 0; $i < count($avatars); $i += 5) {
+        // Ensure enough elements are present to process
+        if (isset($avatars[$i], $avatars[$i + 1], $avatars[$i + 2], $avatars[$i + 3], $avatars[$i + 4])) {
+            $avatar_name = $conn->real_escape_string($avatars[$i]);
+            $avatar_key = $conn->real_escape_string($avatars[$i + 1]);
+            $region_name = $conn->real_escape_string($avatars[$i + 2]);
+            $first_seen = $conn->real_escape_string($avatars[$i + 3]);
+            $last_seen = $conn->real_escape_string($avatars[$i + 4]);
 
-    // Check if the region has changed
-    if ($current_region !== $region_name) {
-        // Update the avatar record with new region and timestamps
-        $stmt = $conn->prepare("INSERT INTO avatar_visits (avatar_name, avatar_key, region_name, first_seen, last_seen) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE region_name=?, last_seen=?");
-        
-        if ($stmt === false) {
-            die(json_encode(['error' => 'SQL statement preparation failed: ' . $conn->error]));
+            // Bind parameters to the statement
+            $stmt->bind_param("ssssssss", 
+                $avatar_name, 
+                $avatar_key, 
+                $region_name, 
+                $first_seen, 
+                $last_seen,
+                $avatar_name, 
+                $region_name, 
+                $last_seen
+            );
+
+            // Execute the statement and handle errors
+            if (!$stmt->execute()) {
+                echo json_encode(['error' => $stmt->error]);
+            }
         }
-
-        $stmt->bind_param("sssssss", $avatar_name, $avatar_key, $region_name, $first_seen, $last_seen, $region_name, $last_seen);
-
-        // Execute the statement and handle errors
-        if ($stmt->execute()) {
-            echo json_encode(['success' => 'Record updated successfully']);
-        } else {
-            echo json_encode(['error' => $stmt->error]);
-        }
-
-        // Close the statement
-        $stmt->close();
-    } else {
-        // If the region hasn't changed, just update the timestamps
-        $stmt = $conn->prepare("UPDATE avatar_visits SET last_seen = ? WHERE avatar_key = ?");
-        
-        if ($stmt === false) {
-            die(json_encode(['error' => 'SQL statement preparation failed: ' . $conn->error]));
-        }
-
-        $stmt->bind_param("ss", $last_seen, $avatar_key);
-
-        // Execute the statement and handle errors
-        if ($stmt->execute()) {
-            echo json_encode(['success' => 'Last seen updated successfully']);
-        } else {
-            echo json_encode(['error' => $stmt->error]);
-        }
-
-        // Close the statement
-        $stmt->close();
     }
+
+    $stmt->close();
+    echo json_encode(['success' => 'Batch update completed successfully']);
 
 // Handle avatar data querying
 } elseif ($action === 'query') {
@@ -88,7 +71,7 @@ if ($action === 'store') {
 
     // Prepare SQL statement to query avatar data
     $stmt = $conn->prepare("SELECT avatar_name, region_name, first_seen, last_seen FROM avatar_visits WHERE avatar_key = ?");
-    
+
     if ($stmt === false) {
         die(json_encode(['error' => 'SQL statement preparation failed: ' . $conn->error]));
     }
@@ -114,7 +97,6 @@ if ($action === 'store') {
         echo json_encode(['error' => 'Query execution failed: ' . $stmt->error]);
     }
 
-    // Close the statement
     $stmt->close();
 
 // If no valid action is provided

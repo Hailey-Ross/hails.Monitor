@@ -38,11 +38,15 @@
    - Do NOT forget to place the `.htaccess` file in the same directory as your `config.php` file.  
    - There is an **optional** `.htaccess` file included to remove directory listing for `av.php` if no index file is present in the same folder.
 
-5. **Run the LSL Scripts:**
+5. **Run SQL File**
+   - Connect to your Database using your favorite SQL Client (HeidiSQL, DBeaver, Oracel, Workbench..)
+   - Copy/Paste the `run_me.sql` file from the `SQL` Directory to create your table.
+
+6. **Run the LSL Scripts:**
    - Place `hails.Monitor.lsl` and `hails.Lookup.lsl` in an object on your land with the edits from above.
    - Say `hails info` into public chat for Commands.
 
-6. **Nothing is Happening?!**
+7. **Nothing is Happening?!**
    - Say `/2 toggle debug` in public chat and quickly resend the command after 5-10 seconds.
    - Read the output.
    - [StackOverflow](https://stackoverflow.com/)

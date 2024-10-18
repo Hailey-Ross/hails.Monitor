@@ -1,2 +1,2 @@
-# Disable directory listing
+# Disable directory listing if you have no index file
 Options -Indexes

@@ -1,4 +1,7 @@
 ## Standalone Version
+*This script is provided as is.*  
+  
+--- 
 **Pro's:**
 - Works out of the box.
 

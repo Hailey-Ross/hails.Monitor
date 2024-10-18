@@ -16,7 +16,7 @@
 
 ---
 
-### General Setup
+### Example Setup
 **Note:**  
 *The files will follow a similar layout to the repository you are viewing.*  
 *Everything inside of `PHP` will be the root of your webserver.*  

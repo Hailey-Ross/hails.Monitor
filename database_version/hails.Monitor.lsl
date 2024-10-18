@@ -9,6 +9,7 @@ list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-000
 integer scan_interval = 5; // How often to scan
 integer command_channel = 2; // IM Toggle command channel
 integer max_avatar_count = 250; // Maximum number of visitors to output
+integer batch_size = 5; // Number of avatars to send in each batch
 
 // Database Connection strings
 string server_url = "https://YOUR-URL-HERE.com/av.php"; // Secure HTTPS URL
@@ -24,7 +25,6 @@ integer waiting_for_response = FALSE;
 integer debug_enabled = FALSE;
 integer im_notifications_enabled = FALSE;
 integer notification_cooldown = 60;
-integer batch_size = 5; 
 
 // Debug function to handle whether to output or not
 debug(string message) {
@@ -38,7 +38,8 @@ sendBatchToServer() {
     string post_data = "api_key=" + API_KEY + "&action=store_batch&data=" + llDumpList2String(avatar_list, ",");
     debug("Sending batch to server with data: " + post_data);
     llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
-    // Do not clear the avatar_list after sending to maintain the recent visitors
+    // Clear the avatar_list after sending to maintain the recent visitors
+    avatar_list = []; 
 }
 
 default {
@@ -88,10 +89,16 @@ default {
                 debug("Avatar detected: " + avatar_name + ", UUID: " + (string)avatar_key + ", Index: " + (string)index); // Debugging
 
                 if (index == -1) {
-                    // Avatar is new, add it to both lists
+                    // Avatar is new, add it to the avatar_list
                     avatar_list += [avatar_name, (string)avatar_key, region_name, first_seen, last_seen];
-                    local_avatar_list += [avatar_name, (string)avatar_key, region_name, first_seen, last_seen]; // Add to local list
-                    total_visitor_count++;
+
+                    // Check if the avatar is already in the local_avatar_list
+                    integer local_index = llListFindList(local_avatar_list, [avatar_name, (string)avatar_key]);
+                    if (local_index == -1) {
+                        // Only add to local_avatar_list if not already present
+                        local_avatar_list += [avatar_name, (string)avatar_key, region_name, first_seen, last_seen];
+                        total_visitor_count++; // Increment only when a new visitor is added
+                    }
 
                     if (llGetListLength(avatar_list) >= batch_size * 5) {
                         sendBatchToServer(); // Send batch if the limit is reached

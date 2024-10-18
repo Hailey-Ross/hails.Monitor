@@ -3,8 +3,6 @@
 
 string server_url = "https://YOUR-URL-HERE.com/av.php"; // URL to your PHP script that handles avatar queries
 string API_KEY = "YOUR-API-KEY"; // Define your API key here
-
-
 integer waiting_for_response = FALSE; // Prevent multiple simultaneous requests
 
 // Function to request avatar info from the server
@@ -18,8 +16,8 @@ requestAvatarInfo(string avatar_key) {
 
 default {
     state_entry() {
-        // Listen on public channel (0) to catch all chat inputs
-        llListen(0, "", llGetOwner(), "");
+        // Listen on channel 2 for private messages
+        llListen(2, "", llGetOwner(), "");
     }
 
     listen(integer channel, string name, key id, string message) {

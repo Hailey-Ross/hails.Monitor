@@ -37,7 +37,7 @@
 
 4. **Upload to your Webserver**
    - Connect to your webserver using a FTP/SFTP Client
-   - Upload the edited contents of the `PHP` directory you edited to your webserver.
+   - Upload the contents of the `PHP` directory you edited to your webserver.
 
 5. **Run the SQL File:**
    - Connect to your database using your favorite SQL client (e.g., HeidiSQL, DBeaver, Oracle, MySQL Workbench).

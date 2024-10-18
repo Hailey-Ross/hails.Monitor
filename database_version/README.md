@@ -40,7 +40,8 @@
 
 5. **Run the SQL File:**
    - Connect to your database using your favorite SQL client (e.g., HeidiSQL, DBeaver, Oracle, MySQL Workbench).
-   - Copy and paste the `run_me.sql` file from the `SQL` directory to create your table.
+   - Copy and paste the `run_me.sql` file from the `SQL` directory.
+   - Run the file as a query to create your table.
 
 6. **Run the LSL Scripts:**
    - Place `hails.Monitor.lsl` and `hails.Lookup.lsl` in an object on your land with the edits from above.

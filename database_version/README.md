@@ -27,7 +27,7 @@
 2. **Update the Server URL:**
    - Update the scripts to point to your webserver, where you are hosting the PHP file `av.php`.  
    Example: `string server_url = "https://mysite.com/av.php";`  
-   Files to edit: `hails.Lookup.lsl`, `hails.Monitor.lsl`
+   Files to edit: `hails.Lookup.lsl`, `hails.Monitor.lsl`  
 
 3. **Create an API Key:**
    - Next, create or generate an API key that must match in all locations and/or scripts.  

@@ -1,7 +1,7 @@
 // Script Created by Hailey Enfield
 // Queries the server for avatar info by UUID
 
-string server_url = "https://YOUR-SERVER-HERE.com/av.php"; // URL to your PHP script that handles avatar queries
+string server_url = "https://YOUR-URL-HERE.com/av.php"; // URL to your PHP script that handles avatar queries
 string API_KEY = "YOUR-API-KEY"; // Define your API key here
 
 

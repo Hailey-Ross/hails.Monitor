@@ -13,10 +13,11 @@ integer batch_size = 5; // Number of avatars to send in each batch
 
 // Database Connection strings
 string server_url = "https://YOUR-URL-HERE.com/av.php"; // Secure HTTPS URL
-string API_KEY = "YOUR-API-KEY"; // API Key for server communication
+string API_KEY = "YOUR-API-HERE"; // API Key for server communication
 
 // DO NOT TOUCH BELOW HERE
-list avatar_list = []; 
+list avatar_list = [];        // For database operations
+list local_avatar_list = [];  // For show me command output
 integer total_visitor_count = 0; 
 string scanner_name; 
 float last_notification_time = 0.0; 
@@ -37,7 +38,7 @@ sendBatchToServer() {
     string post_data = "api_key=" + API_KEY + "&action=store_batch&data=" + llDumpList2String(avatar_list, ",");
     debug("Sending batch to server with data: " + post_data);
     llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
-    avatar_list = []; // Clear the list after sending
+    // Do not clear the avatar_list after sending to maintain the recent visitors
 }
 
 default {
@@ -57,6 +58,8 @@ default {
         list agents = llGetAgentList(AGENT_LIST_REGION, []);
         integer count = llGetListLength(agents);
         string region_name = llGetRegionName(); // Restored region name functionality
+
+        debug("Timer event fired. Number of agents detected: " + (string)count); // Debugging
 
         if (count == 0) {
             llWhisper(0, "No avatars detected in the region.");
@@ -80,9 +83,14 @@ default {
                 string formatted_time = (string)hours + ":" + (string)minutes + ":" + (string)seconds;
                 string detection_time = date + " " + formatted_time; // Removed "UTC" to prevent the error
 
+                // Check if the avatar is already in the avatar_list
                 integer index = llListFindList(avatar_list, [avatar_name, (string)avatar_key]);
+                debug("Avatar detected: " + avatar_name + ", UUID: " + (string)avatar_key + ", Index: " + (string)index); // Debugging
+
                 if (index == -1) {
+                    // Avatar is new, add it to both lists
                     avatar_list += [avatar_name, (string)avatar_key, region_name, first_seen, last_seen];
+                    local_avatar_list += [avatar_name, (string)avatar_key, region_name, first_seen, last_seen]; // Add to local list
                     total_visitor_count++;
 
                     if (llGetListLength(avatar_list) >= batch_size * 5) {
@@ -94,7 +102,11 @@ default {
                         last_notification_time = llGetTime();
                     }
                 } else {
+                    // Avatar exists, update the last seen time in both lists
                     avatar_list = llListReplaceList(avatar_list, [detection_time], index + 3, index + 3);
+                    local_avatar_list = llListReplaceList(local_avatar_list, [detection_time], index + 3, index + 3); // Update local list
+                    debug("Updated last seen time for: " + avatar_name); // Debugging
+                    // Notify that the visitor was updated
                     if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
                         llInstantMessage(llGetOwner(), "Visitor updated: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
                         last_notification_time = llGetTime();
@@ -130,35 +142,48 @@ default {
             }
         } else if (channel == 0 && (id == llGetOwner() || llListFindList(allowed_users, [id]) != -1)) {
             if (message == "show me") {
-                integer count = llGetListLength(avatar_list);
+                integer count = llGetListLength(local_avatar_list); // Use local_avatar_list here
                 if (count == 0) {
                     llInstantMessage(id, "No avatars have been detected.");
                 } else {
                     string output = "Total unique visitors tracked: " + (string)total_visitor_count + "\n";
-                    output += "Displaying " + (string)(count / 5) + " recent visitor(s):\n";
+                    integer visitors_to_show = total_visitor_count;
+
+                    if (visitors_to_show > max_avatar_count) {
+                        visitors_to_show = max_avatar_count;
+                    }
+                    output += "Displaying " + (string)visitors_to_show + " recent visitor(s):\n";
+                    
+                    // Displaying the recent visitors based on max_avatar_count
+                    integer start_index = count - (visitors_to_show * 5);
+                    if (start_index < 0) {
+                        start_index = 0; // Ensure we don't go negative
+                    }
+
                     integer i;
-                    for (i = 0; i < count; i += 5) {
-                        string avatar_name = llList2String(avatar_list, i);
-                        string avatar_key = llList2String(avatar_list, i + 1);
-                        string first_seen = llList2String(avatar_list, i + 2);
-                        string last_seen = llList2String(avatar_list, i + 3);
+                    for (i = start_index; i < count; i += 5) {
+                        string avatar_name = llList2String(local_avatar_list, i);
+                        string avatar_key = llList2String(local_avatar_list, i + 1);
+                        string first_seen = llList2String(local_avatar_list, i + 2);
+                        string last_seen = llList2String(local_avatar_list, i + 3);
                         output += "Name: " + avatar_name + "\nUUID: " + avatar_key + "\nFirst seen: " + first_seen + "\nLast seen: " + last_seen + "\n\n";
 
                         if (llStringLength(output) > 950) {
                             llInstantMessage(id, output);
-                            output = "";
+                            output = ""; // Reset the output for more messages
                         }
                     }
                     if (output != "") {
-                        llInstantMessage(id, output);
+                        llInstantMessage(id, output); // Send any remaining output
                     }
                 }
             } else if (message == "hails clear") {
-                avatar_list = [];
+                local_avatar_list = []; // Clear the local list
                 total_visitor_count = 0;
                 llInstantMessage(id, "Avatar list has been cleared.");
             } else if (message == "hails reset") {
                 avatar_list = [];
+                local_avatar_list = []; // Clear the local list as well
                 total_visitor_count = 0;
                 llInstantMessage(id, "Rebooting " + scanner_name + "..");
                 llResetScript();

@@ -57,4 +57,9 @@
 8. **Nothing is Happening?!**
    - Say `/2 toggle debug` in public chat and quickly resend the command after 5-10 seconds.
    - Read the output.
-   - [StackOverflow](https://stackoverflow.com/) & [LSL Wiki](https://wiki.secondlife.com/wiki/LSL_Portal).
+   - [StackOverflow](https://stackoverflow.com/) & [LSL Wiki](https://wiki.secondlife.com/wiki/LSL_Portal).  
+
+9. **Works? Lookup credential security practices**
+   - [StackOverflow](https://stackoverflow.com/)
+   - [Google](https://google.com/)
+   - Most likely, change your API-Key

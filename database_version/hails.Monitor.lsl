@@ -16,8 +16,8 @@ string server_url = "https://YOUR-URL-HERE.com/av.php"; // Secure HTTPS URL
 string API_KEY = "YOUR-API-HERE"; // API Key for server communication
 
 // DO NOT TOUCH BELOW HERE
-list avatar_list = [];        // For database operations
-list local_avatar_list = [];  // For show me command output
+list avatar_list = [];
+list local_avatar_list = [];
 integer total_visitor_count = 0; 
 string scanner_name; 
 float last_notification_time = 0.0; 

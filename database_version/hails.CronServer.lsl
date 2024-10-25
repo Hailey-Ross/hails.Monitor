@@ -4,12 +4,12 @@
 list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"];
 string server_url = "https://YOUR-URL-HERE.com/av.php"; 
 string API_KEY = "YOUR-API-HERE"; 
-integer update_interval = 7200; // Interval between checks (4-6 hours)
+integer update_interval = 7200; // Interval between checks (2 hours)
 integer debug_enabled = TRUE;
 integer command_channel = 2; // Command channel for toggling debug
 list pending_keys; // List to store keys that need processing
 string current_avatar_key; // Store the current UUID for accurate updates
-integer expecting_keys = TRUE; // Flag to differentiate responses
+integer expecting_keys = FALSE; // Flag to differentiate responses
 integer delay_update_interval = 5; // Delay interval in seconds between each update
 integer batch_limit = 5; // Number of keys to request per batch
 
@@ -45,8 +45,9 @@ default {
 
             llSetTimerEvent(delay_update_interval); // Set delay between each avatar name update
         } else {
-            llSetTimerEvent(update_interval); // Reset main check interval
-            debug("All keys processed; setting timer for next check.");
+            // If pending_keys is empty, call performCheck() to request more keys
+            debug("Batch complete; checking for more empty names.");
+            performCheck();
         }
     }
 
@@ -112,4 +113,3 @@ default {
         }
     }
 }
-

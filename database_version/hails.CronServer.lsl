@@ -1,4 +1,5 @@
 // Script by Hailey Enfield
+// If an entry has an empty avatar_name it will update the database with the correct name.
 
 list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"];
 string server_url = "https://YOUR-URL-HERE.com/av.php"; 

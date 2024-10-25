@@ -4,7 +4,7 @@
 list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"];
 string server_url = "https://YOUR-URL-HERE.com/av.php"; 
 string API_KEY = "YOUR-API-HERE"; 
-integer update_interval = 7200; // Interval between checks (2 hours)
+integer update_interval = 120; // Interval between checks (2 minutes)
 integer debug_enabled = TRUE;
 integer command_channel = 2; // Command channel for toggling debug
 list pending_keys; // List to store keys that need processing
@@ -58,8 +58,8 @@ default {
         if (status == 200 && expecting_keys == TRUE) { 
             expecting_keys = FALSE; // Reset flag after processing
             
-            // Check if response body is an empty list
-            if (body == "[]") {
+            // Check if response body is exactly {"empty_avatar_keys":[]}
+            if (body == "{\"empty_avatar_keys\":[]}") {
                 debug("No entries with empty names found. Sleeping for next interval.");
                 llSetTimerEvent(update_interval); // No entries; reschedule next check
                 return;

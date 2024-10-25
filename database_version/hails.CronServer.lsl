@@ -4,7 +4,7 @@
 list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"];
 string server_url = "https://YOUR-URL-HERE.com/av.php"; 
 string API_KEY = "YOUR-API-HERE"; 
-integer update_interval = 120; // Interval between checks (2 minutes)
+integer update_interval = 7200; // Interval between checks (2 hours)
 integer debug_enabled = TRUE;
 integer command_channel = 2; // Command channel for toggling debug
 list pending_keys; // List to store keys that need processing
@@ -12,6 +12,7 @@ string current_avatar_key; // Store the current UUID for accurate updates
 integer expecting_keys = FALSE; // Flag to differentiate responses
 integer delay_update_interval = 5; // Delay interval in seconds between each update
 integer batch_limit = 5; // Number of keys to request per batch
+integer waiting_for_next_cycle = FALSE; // Flag to avoid processing after a successful batch
 
 // Function to handle debug messages
 debug(string message) {
@@ -22,6 +23,11 @@ debug(string message) {
 
 // Function to perform the main check, limiting the number of keys per request
 performCheck() {
+    if (waiting_for_next_cycle == TRUE) {
+        debug("Currently waiting for next cycle. Skipping check.");
+        return; // Exit if waiting for the next cycle
+    }
+    
     string post_data = "api_key=" + API_KEY + "&action=check_empty_names&limit=" + (string)batch_limit;
     debug("Requesting up to " + (string)batch_limit + " empty avatar names...");
     expecting_keys = TRUE; // Set flag to expect a list of keys
@@ -44,7 +50,7 @@ default {
             llRequestAgentData(current_avatar_key, DATA_NAME); // Lookup avatar name
 
             llSetTimerEvent(delay_update_interval); // Set delay between each avatar name update
-        } else {
+        } else if (waiting_for_next_cycle == FALSE) {
             // If pending_keys is empty, call performCheck() to request more keys
             debug("Batch complete; checking for more empty names.");
             performCheck();
@@ -52,15 +58,21 @@ default {
     }
 
     http_response(key request_id, integer status, list metadata, string body) {
+        if (waiting_for_next_cycle == TRUE) {
+            debug("Ignoring response due to waiting for next cycle.");
+            return; // Do nothing if waiting for the next cycle
+        }
+
         debug("HTTP Response Status: " + (string)status);
         debug("JSON Received: " + body); // Show JSON response for debugging
 
         if (status == 200 && expecting_keys == TRUE) { 
             expecting_keys = FALSE; // Reset flag after processing
-            
+
             // Check if response body is exactly {"empty_avatar_keys":[]}
             if (body == "{\"empty_avatar_keys\":[]}") {
                 debug("No entries with empty names found. Sleeping for next interval.");
+                waiting_for_next_cycle = TRUE; // Set flag to avoid processing until the next interval
                 llSetTimerEvent(update_interval); // No entries; reschedule next check
                 return;
             }
@@ -80,12 +92,15 @@ default {
                     llSetTimerEvent(delay_update_interval); // Start processing with delay
                 } else {
                     debug("No entries found after parsing; sleeping for next interval.");
+                    waiting_for_next_cycle = TRUE; // Set flag to avoid processing until the next interval
                     llSetTimerEvent(update_interval); // No entries; reschedule next check
                 }
             } else {
                 debug("Error parsing JSON response: invalid indices.");
                 llSetTimerEvent(update_interval); // Reset timer for next check to avoid infinite errors
             }
+        } else if (status == 200 && llSubStringIndex(body, "\"success\":\"Batch update completed successfully\"") != -1) {
+            debug("Name update acknowledged by server.");
         } else {
             debug("Error fetching data from server. Status: " + (string)status);
         }

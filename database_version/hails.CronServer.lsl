@@ -4,13 +4,14 @@
 list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"];
 string server_url = "https://YOUR-URL-HERE.com/av.php"; 
 string API_KEY = "YOUR-API-HERE"; 
-integer update_interval = 7200; 
-integer debug_enabled = FALSE;
-integer command_channel = 2;
-list pending_keys;
-string current_avatar_key;
-integer expecting_keys = TRUE; 
-integer delay_update_interval = 5; 
+integer update_interval = 7200; // Interval between checks (4-6 hours)
+integer debug_enabled = TRUE;
+integer command_channel = 2; // Command channel for toggling debug
+list pending_keys; // List to store keys that need processing
+string current_avatar_key; // Store the current UUID for accurate updates
+integer expecting_keys = TRUE; // Flag to differentiate responses
+integer delay_update_interval = 5; // Delay interval in seconds between each update
+integer batch_limit = 5; // Number of keys to request per batch
 
 // Function to handle debug messages
 debug(string message) {
@@ -19,10 +20,10 @@ debug(string message) {
     }
 }
 
-// Function to perform the main check
+// Function to perform the main check, limiting the number of keys per request
 performCheck() {
-    string post_data = "api_key=" + API_KEY + "&action=check_empty_names";
-    debug("Requesting empty avatar names...");
+    string post_data = "api_key=" + API_KEY + "&action=check_empty_names&limit=" + (string)batch_limit;
+    debug("Requesting up to " + (string)batch_limit + " empty avatar names...");
     expecting_keys = TRUE; // Set flag to expect a list of keys
     llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
 }
@@ -51,31 +52,38 @@ default {
 
     http_response(key request_id, integer status, list metadata, string body) {
         debug("HTTP Response Status: " + (string)status);
+        debug("JSON Received: " + body); // Show JSON response for debugging
 
-        if (status == 200) {
-            if (expecting_keys == TRUE) { // Only parse JSON if expecting keys
-                integer start_index = llSubStringIndex(body, "[") + 1;
-                integer end_index = llSubStringIndex(body, "]");
+        if (status == 200 && expecting_keys == TRUE) { 
+            expecting_keys = FALSE; // Reset flag after processing
+            
+            // Check if response body is an empty list
+            if (body == "[]") {
+                debug("No entries with empty names found. Sleeping for next interval.");
+                llSetTimerEvent(update_interval); // No entries; reschedule next check
+                return;
+            }
+
+            // Parse the response if not empty
+            integer start_index = llSubStringIndex(body, "[") + 1;
+            integer end_index = llSubStringIndex(body, "]");
+            
+            if (start_index >= 1 && end_index > start_index) {
+                string clean_body = llDeleteSubString(body, 0, start_index);
+                clean_body = llDeleteSubString(clean_body, end_index - start_index, -1);
                 
-                if (start_index >= 1 && end_index > start_index) {
-                    string clean_body = llDeleteSubString(body, 0, start_index);
-                    clean_body = llDeleteSubString(clean_body, end_index - start_index, -1);
-                    
-                    pending_keys = llParseString2List(clean_body, ["\"", ","], []); 
-                    debug("Parsed keys to process: " + llDumpList2String(pending_keys, ", "));
-                    
-                    if (llGetListLength(pending_keys) > 0) {
-                        llSetTimerEvent(delay_update_interval); // Start processing with delay
-                    } else {
-                        debug("No entries with empty names found. Sleeping for next interval.");
-                        llSetTimerEvent(update_interval); // No entries; reschedule next check
-                    }
+                pending_keys = llParseString2List(clean_body, ["\"", ","], []); 
+                debug("Parsed keys to process: " + llDumpList2String(pending_keys, ", "));
+                
+                if (llGetListLength(pending_keys) > 0) {
+                    llSetTimerEvent(delay_update_interval); // Start processing with delay
                 } else {
-                    debug("Error parsing JSON response: invalid indices.");
+                    debug("No entries found after parsing; sleeping for next interval.");
+                    llSetTimerEvent(update_interval); // No entries; reschedule next check
                 }
-                expecting_keys = FALSE; // Reset flag after processing
             } else {
-                debug("Name update acknowledged by server.");
+                debug("Error parsing JSON response: invalid indices.");
+                llSetTimerEvent(update_interval); // Reset timer for next check to avoid infinite errors
             }
         } else {
             debug("Error fetching data from server. Status: " + (string)status);
@@ -84,7 +92,6 @@ default {
 
     dataserver(key query_id, string avatar_name) {
         if (llStringLength(avatar_name) > 0) {
-            // Use the stored current_avatar_key to ensure we send the correct UUID
             string post_data = "api_key=" + API_KEY + "&action=update_avatar_name&avatar_key=" + current_avatar_key + "&avatar_name=" + llEscapeURL(avatar_name);
             debug("Sending to server: " + post_data);  // Log data being sent
             llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
@@ -94,15 +101,15 @@ default {
     }
 
     listen(integer channel, string name, key id, string message) {
-        if (channel == command_channel) {
-            if (llToLower(message) == "toggle debug") {
-                debug_enabled = !debug_enabled; // Toggle debug
-                if (debug_enabled) {
-                    llOwnerSay("Debugging is now enabled.");
-                } else {
-                    llOwnerSay("Debugging is now disabled.");
-                }
+        if (channel == command_channel && llToLower(message) == "toggle debug") {
+            if (debug_enabled == TRUE) {
+                debug_enabled = FALSE;
+                llOwnerSay("Debugging is now disabled.");
+            } else {
+                debug_enabled = TRUE;
+                llOwnerSay("Debugging is now enabled.");
             }
         }
     }
 }
+

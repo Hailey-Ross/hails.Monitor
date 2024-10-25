@@ -1,6 +1,6 @@
 <?php
 // Load database credentials from an external configuration file
-require_once('/config.php');
+require_once('/priv/config.php');
 
 // Check for API key
 if (!isset($_POST['api_key']) || $_POST['api_key'] !== API_KEY) {

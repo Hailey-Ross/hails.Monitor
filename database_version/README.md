@@ -7,12 +7,19 @@
 - Webserver
    - [Server Hosting](https://letmegooglethat.com/?q=webhosting)  
 - Database  
-- Basic database knowledge  
+- Basic database knowledge
+- SQL Client
+   - [HeidiSQL](https://www.heidisql.com/)  
+   - [Others](https://alternativeto.net/software/heidisql/)  
+
+## You will want:  
+- [Grafana](https://grafana.net) Account
+   - Free tier works well.
 
 ## Do NOT:
-- Request help  
-- Host your `config.php` in a non-secure directory  
-- Share your API key  
+- [Request help](https://stackoverflow.com/)  
+- Host your `config.php` in [a non-secure directory](https://letmegooglethat.com/?q=How+to+securely+host+a+config+file) 
+- [Share/Post your API key in public spaces](https://letmegooglethat.com/?q=API+Security)  
 
 ---
 

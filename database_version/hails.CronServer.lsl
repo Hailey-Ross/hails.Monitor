@@ -4,9 +4,9 @@
 list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"];
 string server_url = "https://YOUR-URL-HERE.com/av.php"; 
 string API_KEY = "YOUR-API-HERE"; 
-integer update_interval = 7200; // Interval between checks (2 hours)
-integer debug_enabled = TRUE;
-integer command_channel = 2; // Command channel for toggling debug
+integer update_interval = 3600; // Interval between checks (1 hour)
+integer debug_enabled = FALSE;
+integer command_channel = 3; // Command channel for toggling debug
 list pending_keys; // List to store keys that need processing
 string current_avatar_key; // Store the current UUID for accurate updates
 integer expecting_keys = FALSE; // Flag to differentiate responses
@@ -38,7 +38,7 @@ default {
     state_entry() {
         llSetTimerEvent(update_interval);
         llListen(command_channel, "", llGetOwner(), ""); // Listen on command channel
-        llOwnerSay("Periodic Avatar Name Updater is active.");
+        llOwnerSay("Hails.CronServer is now online");
         performCheck(); // Run once immediately upon startup
     }
 

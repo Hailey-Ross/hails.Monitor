@@ -2,7 +2,7 @@
 // If an entry has an empty avatar_name it will update the database with the correct name.
 
 list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"];
-string server_url = "https://YOUR-URL-HERE.com/av.php"; 
+string server_url = "https://YOUR-URL-HERE.com/avCron.php"; 
 string API_KEY = "YOUR-API-HERE"; 
 integer update_interval = 3600; // Interval between checks (1 hour)
 integer debug_enabled = FALSE;

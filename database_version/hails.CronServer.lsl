@@ -37,6 +37,7 @@ default {
         llSetTimerEvent(update_interval);
         llListen(command_channel, "", llGetOwner(), ""); 
         llOwnerSay("Hails.CronServer is now online");
+        debug("Debugging is enabled.");
         performCheck(); 
     }
 

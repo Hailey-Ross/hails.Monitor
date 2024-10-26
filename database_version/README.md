@@ -28,12 +28,12 @@
 2. **Update the Server URL:**
    - Update the scripts to point to your webserver, where you are hosting the PHP file `av.php`.  
    Example: `string server_url = "https://mysite.com/av.php";`  
-   Files to edit: `hails.Lookup.lsl`, `hails.Monitor.lsl`  
+   Files to edit: `hails.Lookup.lsl`, `hails.Monitor.lsl`, `hails.CronServer.lsl`  
 
 3. **Create an API Key:**
    - Next, create or generate an API key that must match in all locations and/or scripts.  
    Example: `string API_KEY = "SECRET-API-KEY";`  
-   Files to edit: `config.php`, `hails.Lookup.lsl`, `hails.Monitor.lsl`
+   Files to edit: `config.php`, `hails.Lookup.lsl`, `hails.Monitor.lsl`, `hails.CronServer.lsl`
 
 4. **Upload to your Webserver**
    - Connect to your webserver using a FTP/SFTP Client
@@ -42,17 +42,19 @@
 5. **Run the SQL File:**
    - Connect to your database using your favorite SQL client (e.g., HeidiSQL, DBeaver, Oracle, MySQL Workbench).
    - Copy and paste the `run_me.sql` file from the `SQL` directory.
-   - Run the file as a query to create your table.
+   - Run the file as a query to create your tables.
 
-6. **Check the .htaccess Files:**
+6. **Check for the .htaccess Files:**
    - Do NOT forget to include the `.htaccess` file in the same directory as your `config.php` file.  
    - There is an **optional** `.htaccess` file included with `av.php` if no index file is present in the same folder.
    - Most setups will want these files or a variation in place.
 
-7. **Run the LSL Scripts:**
-   - Place `hails.Monitor.lsl` and `hails.Lookup.lsl` in an object on your land with the edits from above.
-      - `hails.Lookup.lsl` can optionally be used seperately as standalone lookup script from the scanner.
-   - Say `hails info` in public chat to view available commands.
+7. **Run the LSL Scripts:**  
+   - Place `hails.Monitor.lsl` and `hails.Lookup.lsl` in an object on your land with the edits from above.  
+      - `hails.Lookup.lsl` can optionally be used seperately as standalone lookup script from the scanner.  
+   - Place `hails.CronServer.lsl` into an additional object.  
+      - You can toggle the debug on chat channel 3 for the this script. Ex. `/3 toggle debug`  
+   - Say `hails info` in public chat to view available commands for the applicable scripts.
 
 8. **Nothing is Happening?!**
    - Say `/2 toggle debug` in public chat and quickly resend the command after 5-10 seconds.

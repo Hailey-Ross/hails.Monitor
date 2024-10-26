@@ -17,7 +17,6 @@
    - Free tier works well.
 
 ## Do NOT:
-- [Request help](https://stackoverflow.com/)  
 - Host your `config.php` in [a non-secure directory](https://letmegooglethat.com/?q=How+to+securely+host+a+config+file) 
 - [Share/Post your API key in public spaces](https://letmegooglethat.com/?q=API+Security)  
 

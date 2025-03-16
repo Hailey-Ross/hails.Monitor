@@ -62,7 +62,7 @@ default {
         if (count == 0) {
             llWhisper(0, "No avatars detected in the region.");
         } else {
-            integer i; // Declare i here
+            integer i;
             for (i = 0; i < count; i++) { 
                 key avatar_key = llList2Key(agents, i);
                 string avatar_name = llKey2Name(avatar_key);
@@ -70,7 +70,6 @@ default {
                 float pacific_time = llGetWallclock();
                 float utc_time = pacific_time + (7 * 3600);
 
-                // Clean up the timestamps before sending to the database
                 string first_seen = llDeleteSubString(llGetTimestamp(), -4, -1);
                 string last_seen = llDeleteSubString(llGetTimestamp(), -4, -1);
 
@@ -81,18 +80,14 @@ default {
                 string formatted_time = (string)hours + ":" + (string)minutes + ":" + (string)seconds;
                 string detection_time = date + " " + formatted_time;
 
-                // Check if the avatar is already in the avatar_list
                 integer index = llListFindList(avatar_list, [avatar_name, (string)avatar_key]);
                 debug("Avatar detected: " + avatar_name + ", UUID: " + (string)avatar_key + ", Index: " + (string)index); // Debugging
 
                 if (index == -1) {
-                    // Avatar is new, add it to the avatar_list
                     avatar_list += [avatar_name, (string)avatar_key, region_name, first_seen, last_seen];
 
-                    // Check if the avatar is already in the local_avatar_list
                     integer local_index = llListFindList(local_avatar_list, [avatar_name, (string)avatar_key]);
                     if (local_index == -1) {
-                        // Only add to local_avatar_list if not already present
                         local_avatar_list += [avatar_name, (string)avatar_key, region_name, first_seen, last_seen];
                         total_visitor_count++; 
                     }
@@ -106,11 +101,9 @@ default {
                         last_notification_time = llGetTime();
                     }
                 } else {
-                    // Avatar exists, update the last seen time in both lists
                     avatar_list = llListReplaceList(avatar_list, [detection_time], index + 3, index + 3);
                     local_avatar_list = llListReplaceList(local_avatar_list, [detection_time], index + 3, index + 3); 
                     debug("Updated last seen time for: " + avatar_name); 
-                    // Notify that the visitor was updated
                     if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
                         llInstantMessage(llGetOwner(), "Visitor updated: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
                         last_notification_time = llGetTime();
@@ -157,7 +150,6 @@ default {
                     }
                     output += "Displaying " + (string)visitors_to_show + " recent visitor(s):\n";
                     
-                    // Displaying the recent visitors based on max_avatar_count
                     integer start_index = count - (visitors_to_show * 5);
                     if (start_index < 0) {
                         start_index = 0; /

@@ -26,19 +26,16 @@ integer debug_enabled = FALSE;
 integer im_notifications_enabled = FALSE;
 integer notification_cooldown = 60;
 
-// Debug function to handle whether to output or not
 debug(string message) {
     if (debug_enabled) {
         llOwnerSay(message);
     }
 }
 
-// Function to send avatar data in batches to the server
 sendBatchToServer() {
     string post_data = "api_key=" + API_KEY + "&action=store_batch&data=" + llDumpList2String(avatar_list, ",");
     debug("Sending batch to server with data: " + post_data);
     llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
-    // Clear the avatar_list after sending to maintain the recent visitors
     avatar_list = []; 
 }
 
@@ -58,7 +55,7 @@ default {
     timer() {
         list agents = llGetAgentList(AGENT_LIST_REGION, []);
         integer count = llGetListLength(agents);
-        string region_name = llGetRegionName(); // Restored region name functionality
+        string region_name = llGetRegionName();
 
         debug("Timer event fired. Number of agents detected: " + (string)count); // Debugging
 
@@ -66,7 +63,7 @@ default {
             llWhisper(0, "No avatars detected in the region.");
         } else {
             integer i; // Declare i here
-            for (i = 0; i < count; i++) { // Loop syntax corrected
+            for (i = 0; i < count; i++) { 
                 key avatar_key = llList2Key(agents, i);
                 string avatar_name = llKey2Name(avatar_key);
                 string date = llGetDate();
@@ -82,7 +79,7 @@ default {
                 integer seconds = (integer)utc_time % 60;
 
                 string formatted_time = (string)hours + ":" + (string)minutes + ":" + (string)seconds;
-                string detection_time = date + " " + formatted_time; // Removed "UTC" to prevent the error
+                string detection_time = date + " " + formatted_time;
 
                 // Check if the avatar is already in the avatar_list
                 integer index = llListFindList(avatar_list, [avatar_name, (string)avatar_key]);
@@ -97,11 +94,11 @@ default {
                     if (local_index == -1) {
                         // Only add to local_avatar_list if not already present
                         local_avatar_list += [avatar_name, (string)avatar_key, region_name, first_seen, last_seen];
-                        total_visitor_count++; // Increment only when a new visitor is added
+                        total_visitor_count++; 
                     }
 
                     if (llGetListLength(avatar_list) >= batch_size * 5) {
-                        sendBatchToServer(); // Send batch if the limit is reached
+                        sendBatchToServer(); 
                     }
 
                     if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
@@ -111,8 +108,8 @@ default {
                 } else {
                     // Avatar exists, update the last seen time in both lists
                     avatar_list = llListReplaceList(avatar_list, [detection_time], index + 3, index + 3);
-                    local_avatar_list = llListReplaceList(local_avatar_list, [detection_time], index + 3, index + 3); // Update local list
-                    debug("Updated last seen time for: " + avatar_name); // Debugging
+                    local_avatar_list = llListReplaceList(local_avatar_list, [detection_time], index + 3, index + 3); 
+                    debug("Updated last seen time for: " + avatar_name); 
                     // Notify that the visitor was updated
                     if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
                         llInstantMessage(llGetOwner(), "Visitor updated: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
@@ -122,7 +119,6 @@ default {
             }
         }
 
-        // Send any remaining avatars after the timer event
         if (llGetListLength(avatar_list) > 0) {
             sendBatchToServer();
         }
@@ -149,7 +145,7 @@ default {
             }
         } else if (channel == 0 && (id == llGetOwner() || llListFindList(allowed_users, [id]) != -1)) {
             if (message == "show me") {
-                integer count = llGetListLength(local_avatar_list); // Use local_avatar_list here
+                integer count = llGetListLength(local_avatar_list);
                 if (count == 0) {
                     llInstantMessage(id, "No avatars have been detected.");
                 } else {
@@ -164,7 +160,7 @@ default {
                     // Displaying the recent visitors based on max_avatar_count
                     integer start_index = count - (visitors_to_show * 5);
                     if (start_index < 0) {
-                        start_index = 0; // Ensure we don't go negative
+                        start_index = 0; /
                     }
 
                     integer i;
@@ -177,20 +173,20 @@ default {
 
                         if (llStringLength(output) > 950) {
                             llInstantMessage(id, output);
-                            output = ""; // Reset the output for more messages
+                            output = ""; 
                         }
                     }
                     if (output != "") {
-                        llInstantMessage(id, output); // Send any remaining output
+                        llInstantMessage(id, output); 
                     }
                 }
             } else if (message == "hails clear") {
-                local_avatar_list = []; // Clear the local list
+                local_avatar_list = []; 
                 total_visitor_count = 0;
                 llInstantMessage(id, "Avatar list has been cleared.");
             } else if (message == "hails reset") {
                 avatar_list = [];
-                local_avatar_list = []; // Clear the local list as well
+                local_avatar_list = [];
                 total_visitor_count = 0;
                 llInstantMessage(id, "Rebooting " + scanner_name + "..");
                 llResetScript();
@@ -213,13 +209,13 @@ default {
 
     http_response(key request_id, integer status, list metadata, string body) {
         // Handle the server's response for avatar queries
-        debug("HTTP Response Status: " + (string)status); // Debug: Show HTTP status
+        debug("HTTP Response Status: " + (string)status); 
 
         if (status == 200) {
-            debug("Server response: " + body);  // Debug: Show the server response
+            debug("Server response: " + body);  
         } else {
-            debug("Error fetching avatar data from the server. Status: " + (string)status);  // Debug: Show error status
+            debug("Error fetching avatar data from the server. Status: " + (string)status);  
         }
-        waiting_for_response = FALSE; // Allow future requests after receiving a response
+        waiting_for_response = FALSE; 
     }
 }

@@ -35,7 +35,7 @@ Monitor avatar activity in Second Life and store data in a MySQL database. This 
 ### 1. Download the Files:
 
 - Grab the contents of the `PHP` folder and move them to your local machine.
-- Copy the LSL scripts (`hails.Monitor.lsl`, `hails.Lookup.lsl`, `hails.CronServer.lsl`) into your Second Life inventory.
+- Copy the LSL scripts (`hails.Monitor.lsl`, `hails.Lookup.lsl`, `hails.CronServer.lsl`, `hails.HUDmon.lsl`) into your Second Life inventory.
 
 ### 2. Update Server URL:
 
@@ -43,7 +43,7 @@ Monitor avatar activity in Second Life and store data in a MySQL database. This 
   ```lsl
   string server_url = "https://YOUR-SITE-HERE.tld/av.php";
   ```
-  Edit this in `hails.Lookup.lsl`, `hails.Monitor.lsl`, `hails.CronServer.lsl`.
+  Edit this in `hails.Lookup.lsl`, `hails.Monitor.lsl`, `hails.CronServer.lsl`, `hails.HUDmon.lsl`.
 
 ### 3. Create an API Key:
 
@@ -51,7 +51,7 @@ Monitor avatar activity in Second Life and store data in a MySQL database. This 
   ```lsl
   string API_KEY = "YOUR-SECRET-KEY";
   ```
-  Edit in `config.php`, `hails.Lookup.lsl`, `hails.Monitor.lsl`, `hails.CronServer.lsl`.
+  Edit in `config.php`, `hails.Lookup.lsl`, `hails.Monitor.lsl`, `hails.CronServer.lsl`, `hails.HUDmon.lsl`.
 
 ### 4. Upload to Webserver:
 

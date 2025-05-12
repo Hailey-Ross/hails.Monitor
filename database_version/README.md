@@ -30,7 +30,7 @@ Monitor avatar activity in Second Life and store data in a MySQL database. This 
 
 ## ⚡️ Example Setup
 
-**Note:** The folder structure will follow the layout in this repo. Everything in the `PHP` folder should go in the root of your webserver.
+**Note:** The folder structure will follow the layout in this repo. Everything in the `PHP` folder should go in the desired directory on your webserver.
 
 ### 1. Download the Files:
 

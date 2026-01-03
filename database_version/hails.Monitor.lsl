@@ -1,5 +1,5 @@
 // Script Created by Hailey Enfield
-// Site: https://u.hails.cc/Links
+// Site: https://links.hails.cc
 // Github: https://github.com/Hailey-Ross/hails.Monitor
 // PLEASE LEAVE ALL CREDITS/COMMENTS INTACT
 // Scans the entire sim, stores avatars with detection timestamps and region

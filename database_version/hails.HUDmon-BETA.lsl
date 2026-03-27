@@ -1,20 +1,19 @@
 // Script Created by Hailey Enfield
-// Site: https://links.hails.cc
+// Site: https://u.hails.cc/Links
 // Github: https://github.com/Hailey-Ross/hails.Monitor
 // PLEASE LEAVE ALL CREDITS/COMMENTS INTACT
 // Scans the entire sim, stores avatars with detection timestamps and region
 // Say "hails info" in public chat for Command List
 
-// Place in object and wear on HUD
-// This version of the scaript is a WIP.
-
-list allowed_users = ["00000000-0000-0000-0000-000000000000"]; // Who else can check the visitor list? UUID's only
+list allowed_users = ["0fc458f0-50c4-4d6f-95a6-965be6e977ad"]; // Who else can check the visitor list? UUID's only
 integer scan_interval = 12; // How often to scan
 integer command_channel = 2; // IM Toggle command channel
+integer max_avatar_count = 250; // Maximum number of visitors to output
+integer batch_size = 20; // Number of avatars to send in each batch
 
 // Database Connection strings
-string server_url = "https://YOUR-SITE-HERE.tld/av.php"; // Secure HTTPS URL
-string API_KEY = "YOUR-API-KEY-HERE"; // API Key for server communication
+string server_url = "https://mon.hails.cc/hails.php"; // Secure HTTPS URL
+string API_KEY = "Clx2Kgy1WXPiRsL6OJ6I830OTwS"; // API Key for server communication
 
 // DO NOT TOUCH BELOW HERE
 list avatar_list = [];        // For database operations
@@ -26,11 +25,9 @@ integer debug_enabled = FALSE;
 integer im_notifications_enabled = FALSE;
 integer notification_cooldown = 60;
 integer standby_mode = FALSE; // Standby mode flag
-integer max_avatar_count = 250; // Maximum number of visitors to output
-integer batch_size = 20; // Number of avatars to send in each batch
 
 // Texture UUID
-string texture_uuid = "e836dda9-0e87-94db-abac-3596231e26aa"; // Set texture UUID
+string texture_uuid = "b18295e3-facb-0a25-61ae-d0b49073ea65"; // Set texture UUID
 
 // Debug function to handle whether to output or not
 debug(string message) {
@@ -42,7 +39,8 @@ debug(string message) {
 // Function to send avatar data in batches to the server
 sendBatchToServer() {
     string post_data = "api_key=" + API_KEY + "&action=store_batch&data=" + llDumpList2String(avatar_list, ",");
-    debug("Sending batch to server with data: " + post_data);
+    string censored_post_data = "api_key=CENSORED_API_KEY&action=store_batch&data=" + llDumpList2String(avatar_list, ",");
+    debug("Sending batch to server with data: " + censored_post_data);
     llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
     // Clear the avatar_list after sending to maintain the recent visitors
     avatar_list = []; 
@@ -51,14 +49,14 @@ sendBatchToServer() {
 // Function to check if in standby mode based on the region
 checkStandbyMode() {
     string region_name = llGetRegionName();
-    if (region_name == "Region 1" || region_name == "Region 2") { // add the region your scanner(s) are in here
+    if (region_name == "Lettuce Spray" || region_name == "Lil G" || region_name == "Nuku Iva") { //|| region_name == "Region"
         standby_mode = TRUE;
         debug("Standby mode enabled in region: " + region_name); // Debugging only
-        llSetColor(<1.0, 0.0, 0.0>, ALL_SIDES); // Set color to red
+        llSetColor(<1.0, 0.0, 0.5>, ALL_SIDES); // Set color to black
     } else {
         standby_mode = FALSE;
         debug("Standby mode disabled in region: " + region_name); // Debugging only
-        llSetColor(<0.0, 1.0, 0.0>, ALL_SIDES); // Set color to green
+        llSetColor(<1.0, 1.0, 1.0>, ALL_SIDES); // Set color to white
     }
 }
 
@@ -173,7 +171,7 @@ default {
                 }
             }
         } else if (channel == 0 && (id == llGetOwner() || llListFindList(allowed_users, [id]) != -1)) {
-            if (message == "hudmon reset") {
+            if (message == "hails reset") {
                 avatar_list = []; // Clear the avatar list
                 total_visitor_count = 0; // Reset visitor count
                 llInstantMessage(id, "Rebooting " + scanner_name + "..");
@@ -181,7 +179,7 @@ default {
             } else if (message == "hails info") {
                 llInstantMessage(id,
                     scanner_name + " Commands:\n" +
-                    "• 'hudmon reset' - Resets the script.\n" +
+                    "• 'hails reset' - Resets the script.\n" +
                     "• '/"
                     + (string)command_channel + " toggle im' - (Owner Only) Toggles IM notifications for new avatar detection.\n" +
                     "• '/"

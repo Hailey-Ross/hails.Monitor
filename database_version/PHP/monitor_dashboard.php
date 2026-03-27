@@ -45,7 +45,6 @@ function timezoneOptions(): array
         'America/Denver',
         'America/New_York',
         'America/Chicago',
-		'America/Chicago',
         'America/Los_Angeles',
         'America/Phoenix',
         'America/Anchorage',

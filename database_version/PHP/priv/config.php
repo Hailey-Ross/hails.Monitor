@@ -1,8 +1,18 @@
 <?php
-// config.php - Store this file in a non-web-accessible directory
-define('DB_SERVER', 'DB-SERVER-URL');
-define('DB_USERNAME', 'YOUR-USERNAME-HERE');
-define('DB_PASSWORD', 'YOUR-PASS-HERE');
-define('DB_NAME', 'YOUR-DB-NAME');
-define('API_KEY', 'YOUR-API-KEY'); // Add the API key here
+
+if (php_sapi_name() !== 'cli' && !defined('ALLOW_CONFIG_INCLUDE')) {
+    http_response_code(403);
+    exit('Forbidden');
+}
+
+define('DB_SERVER', 'localhost');
+define('DB_USERNAME', 'mtnbound');
+define('DB_PASSWORD', 'YOUR-PASSWORD-HERE');
+define('DB_NAME', 'hailsmonitor');
+define('API_KEY', 'YOUR-API-KEY-HERE'); // Add the API key here
+
+/**
+ * Monitor dashboard login
+ */
+define('MONITOR_SUPERADMIN', 'YOUR-DASHBOARD-USERNAME-HERE');
 ?>

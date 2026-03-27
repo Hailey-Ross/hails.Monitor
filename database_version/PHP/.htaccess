@@ -1,2 +1,17 @@
-# Disable directory listing if you have no index file
 Options -Indexes
+
+<FilesMatch "^(phpcron\.txt|phpcron_.*\.txt)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(sql|bak|old|log)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<Files "hailsDBCompressCron.php">
+    Require all denied
+</Files>

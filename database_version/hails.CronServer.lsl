@@ -2,8 +2,8 @@
 // If an entry has an empty avatar_name it will update the database with the correct name.
 
 list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000"];
-string server_url = "https://YOUR-URL-HERE.com/avCron.php"; 
-string API_KEY = "YOUR-API-HERE"; 
+string server_url = "https://YOUR-SITE-HERE.tld/avCron.php";
+string API_KEY = "YOUR-API-KEY";
 integer update_interval = 28800; // Interval between checks (8 hours)
 integer debug_enabled = TRUE;
 integer command_channel = 3; 
@@ -43,8 +43,15 @@ default {
 
     timer() {
         if (llGetListLength(pending_keys) > 0) {
-            current_avatar_key = llList2String(pending_keys, 0);
-            pending_keys = llDeleteSubList(pending_keys, 0, 0); 
+            current_avatar_key = llStringTrim(llList2String(pending_keys, 0), STRING_TRIM);
+            pending_keys = llDeleteSubList(pending_keys, 0, 0);
+
+            if (current_avatar_key == "" || (key)current_avatar_key == NULL_KEY) {
+                debug("Skipping invalid UUID entry: " + current_avatar_key);
+                llSetTimerEvent(delay_update_interval);
+                return;
+            }
+
             debug("Looking up avatar name for UUID: " + current_avatar_key);
             llRequestAgentData(current_avatar_key, DATA_NAME);
 
@@ -58,54 +65,85 @@ default {
     http_response(key request_id, integer status, list metadata, string body) {
         if (waiting_for_next_cycle == TRUE) {
             debug("Ignoring response due to waiting for next cycle.");
-            return; 
+            return;
         }
 
         debug("HTTP Response Status: " + (string)status);
-        debug("JSON Received: " + body); 
+        debug("JSON Received: " + body);
 
-        if (status == 200 && expecting_keys == TRUE) { 
-            expecting_keys = FALSE; 
+        if (status != 200) {
+            debug("Error fetching data from server. Status: " + (string)status);
+            return;
+        }
+
+        if (expecting_keys == TRUE) {
+            expecting_keys = FALSE;
 
             if (body == "{\"empty_avatar_keys\":[]}") {
                 debug("No entries with empty names found. Sleeping for next interval.");
-                waiting_for_next_cycle = TRUE; 
-                llSetTimerEvent(update_interval); 
+                waiting_for_next_cycle = TRUE;
+                llSetTimerEvent(update_interval);
                 return;
             }
 
-            integer start_index = llSubStringIndex(body, "[") + 1;
+            integer start_index = llSubStringIndex(body, "[");
             integer end_index = llSubStringIndex(body, "]");
-            
-            if (start_index >= 1 && end_index > start_index) {
-                string clean_body = llDeleteSubString(body, 0, start_index);
-                clean_body = llDeleteSubString(clean_body, end_index - start_index, -1);
+
+            if (start_index != -1 && end_index != -1 && end_index > start_index) {
+                string clean_body = llGetSubString(body, start_index + 1, end_index - 1);
+
+                pending_keys = llParseString2List(clean_body, ["\"", ","], []);
                 
-                pending_keys = llParseString2List(clean_body, ["\"", ","], []); 
+                integer i;
+                list filtered_keys = [];
+                integer count = llGetListLength(pending_keys);
+
+                for (i = 0; i < count; ++i) {
+                    string candidate = llStringTrim(llList2String(pending_keys, i), STRING_TRIM);
+
+                    if (candidate != "" && candidate != "]" && (key)candidate != NULL_KEY) {
+                        filtered_keys += [candidate];
+                    }
+                }
+
+                pending_keys = filtered_keys;
+
                 debug("Parsed keys to process: " + llDumpList2String(pending_keys, ", "));
-                
+
                 if (llGetListLength(pending_keys) > 0) {
-                    llSetTimerEvent(delay_update_interval); 
+                    llSetTimerEvent(delay_update_interval);
                 } else {
                     debug("No entries found after parsing; sleeping for next interval.");
-                    waiting_for_next_cycle = TRUE; 
-                    llSetTimerEvent(update_interval); 
+                    waiting_for_next_cycle = TRUE;
+                    llSetTimerEvent(update_interval);
                 }
             } else {
                 debug("Error parsing JSON response: invalid indices.");
-                llSetTimerEvent(update_interval); 
+                waiting_for_next_cycle = TRUE;
+                llSetTimerEvent(update_interval);
             }
-        } else if (status == 200 && llSubStringIndex(body, "\"success\":\"Batch update completed successfully\"") != -1) {
-            debug("Name update acknowledged by server.");
-        } else {
-            debug("Error fetching data from server. Status: " + (string)status);
+
+            return;
         }
+
+        if (llSubStringIndex(body, "\"success\":\"Avatar name updated successfully\"") != -1) {
+            debug("Avatar name update acknowledged by server.");
+            return;
+        }
+
+        if (llSubStringIndex(body, "\"error\"") != -1) {
+            debug("Server returned an error: " + body);
+            return;
+        }
+
+        debug("Unexpected response from server: " + body);
     }
 
     dataserver(key query_id, string avatar_name) {
         if (llStringLength(avatar_name) > 0) {
             string post_data = "api_key=" + API_KEY + "&action=update_avatar_name&avatar_key=" + current_avatar_key + "&avatar_name=" + llEscapeURL(avatar_name);
-            debug("Sending to server: " + post_data);  
+            string censored_post_data = "api_key=CENSORED-API-KEY&action=update_avatar_name&avatar_key=" + current_avatar_key + "&avatar_name=" + llEscapeURL(avatar_name);
+            debug("Sending to server: " + censored_post_data);  
             llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
         } else {
             debug("Avatar name lookup failed for UUID: " + current_avatar_key);

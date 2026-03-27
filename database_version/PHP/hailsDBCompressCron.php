@@ -24,9 +24,6 @@ const LOG_FILE = __DIR__ . '/phpcron.txt';
 const LOG_MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const LOG_RETENTION_DAYS = 20;
 
-/**
- * Rotate log if needed
- */
 function rotateLogIfNeeded(): void
 {
     if (!file_exists(LOG_FILE)) {
@@ -44,9 +41,6 @@ function rotateLogIfNeeded(): void
     @rename(LOG_FILE, $rotatedName);
 }
 
-/**
- * Delete old rotated logs
- */
 function cleanupOldLogs(): void
 {
     $files = glob(__DIR__ . '/phpcron_*.txt');
@@ -68,9 +62,6 @@ function cleanupOldLogs(): void
     }
 }
 
-/**
- * Logging helpers
- */
 function logMessage(string $message): void
 {
     $line = '[' . gmdate('Y-m-d H:i:s') . '] ' . $message . PHP_EOL;
@@ -82,9 +73,6 @@ function logError(string $message): void
     logMessage('ERROR: ' . $message);
 }
 
-/**
- * Catch fatal errors
- */
 register_shutdown_function(function () {
     $error = error_get_last();
     if ($error !== null) {
@@ -92,9 +80,6 @@ register_shutdown_function(function () {
     }
 });
 
-/**
- * DB connection
- */
 function db(): PDO
 {
     return new PDO(
@@ -109,9 +94,6 @@ function db(): PDO
     );
 }
 
-/**
- * Ensure compression state exists
- */
 function ensureCompressionState(PDO $pdo): void
 {
     $stmt = $pdo->prepare("
@@ -122,9 +104,6 @@ function ensureCompressionState(PDO $pdo): void
     $stmt->execute([':job_name' => JOB_NAME]);
 }
 
-/**
- * Get last processed ID
- */
 function getLastProcessedId(PDO $pdo): int
 {
     $stmt = $pdo->prepare("
@@ -139,9 +118,6 @@ function getLastProcessedId(PDO $pdo): int
     return $row ? (int)$row['last_processed_id'] : 0;
 }
 
-/**
- * Save progress
- */
 function setLastProcessedId(PDO $pdo, int $id): void
 {
     $stmt = $pdo->prepare("
@@ -155,9 +131,6 @@ function setLastProcessedId(PDO $pdo, int $id): void
     ]);
 }
 
-/**
- * Fetch eligible rows
- */
 function fetchRows(PDO $pdo, int $afterId): array
 {
     $safetyDelaySeconds = (int) SAFETY_DELAY_SECONDS;
@@ -171,7 +144,7 @@ function fetchRows(PDO $pdo, int $afterId): array
             avatar_key_gc
         FROM change_log
         WHERE table_name = 'avatar_visits'
-          AND operation IN ('INSERT', 'UPDATE')
+          AND operation IN ('INSERT', 'UPDATE', 'Insert')
           AND id > :after_id
           AND change_time < (UTC_TIMESTAMP() - INTERVAL {$safetyDelaySeconds} SECOND)
           AND avatar_key_gc IS NOT NULL
@@ -188,9 +161,36 @@ function fetchRows(PDO $pdo, int $afterId): array
     return $stmt->fetchAll();
 }
 
-/**
- * Insert one compressed session
- */
+function fetchStrandedRows(PDO $pdo, int $lastProcessedId): array
+{
+    $safetyDelaySeconds = (int) SAFETY_DELAY_SECONDS;
+    $fetchLimit = (int) FETCH_LIMIT;
+
+    $sql = "
+        SELECT
+            id,
+            change_time,
+            region_name_gc,
+            avatar_key_gc
+        FROM change_log
+        WHERE table_name = 'avatar_visits'
+          AND operation IN ('INSERT', 'UPDATE', 'Insert')
+          AND id <= :last_processed_id
+          AND change_time < (UTC_TIMESTAMP() - INTERVAL {$safetyDelaySeconds} SECOND)
+          AND avatar_key_gc IS NOT NULL
+          AND avatar_key_gc <> ''
+          AND region_name_gc IS NOT NULL
+          AND region_name_gc <> ''
+        ORDER BY id ASC
+        LIMIT {$fetchLimit}
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':last_processed_id' => $lastProcessedId]);
+
+    return $stmt->fetchAll();
+}
+
 function insertSession(PDO $pdo, array $session): void
 {
     static $stmt = null;
@@ -231,9 +231,6 @@ function insertSession(PDO $pdo, array $session): void
     ]);
 }
 
-/**
- * Delete processed raw rows
- */
 function deleteIds(PDO $pdo, array $ids): void
 {
     foreach (array_chunk($ids, DELETE_CHUNK_SIZE) as $chunk) {
@@ -248,9 +245,73 @@ function deleteIds(PDO $pdo, array $ids): void
     }
 }
 
-/**
- * Main run
- */
+function processBatch(PDO $pdo, array $rows, array &$openSessions, array &$deleteIds, int &$maxSeenId): int
+{
+    $insertedSessions = 0;
+
+    foreach ($rows as $row) {
+        $id = (int)$row['id'];
+        $avatarKey = (string)$row['avatar_key_gc'];
+        $regionName = (string)$row['region_name_gc'];
+        $changeTime = (string)$row['change_time'];
+
+        $maxSeenId = max($maxSeenId, $id);
+
+        $sessionKey = $avatarKey . '|' . $regionName;
+
+        if (!isset($openSessions[$sessionKey])) {
+            $openSessions[$sessionKey] = [
+                'avatar_key' => $avatarKey,
+                'region_name' => $regionName,
+                'visit_start' => $changeTime,
+                'visit_end' => $changeTime,
+                'heartbeat_count' => 1,
+                'source_first_change_log_id' => $id,
+                'source_last_change_log_id' => $id,
+                'row_ids' => [$id],
+            ];
+            continue;
+        }
+
+        $gap = strtotime($changeTime) - strtotime($openSessions[$sessionKey]['visit_end']);
+
+        if ($gap <= GAP_SECONDS) {
+            $openSessions[$sessionKey]['visit_end'] = $changeTime;
+            $openSessions[$sessionKey]['heartbeat_count']++;
+            $openSessions[$sessionKey]['source_last_change_log_id'] = $id;
+            $openSessions[$sessionKey]['row_ids'][] = $id;
+        } else {
+            insertSession($pdo, $openSessions[$sessionKey]);
+            $insertedSessions++;
+            $deleteIds = array_merge($deleteIds, $openSessions[$sessionKey]['row_ids']);
+
+            $openSessions[$sessionKey] = [
+                'avatar_key' => $avatarKey,
+                'region_name' => $regionName,
+                'visit_start' => $changeTime,
+                'visit_end' => $changeTime,
+                'heartbeat_count' => 1,
+                'source_first_change_log_id' => $id,
+                'source_last_change_log_id' => $id,
+                'row_ids' => [$id],
+            ];
+        }
+    }
+
+    $cutoff = time() - SAFETY_DELAY_SECONDS;
+
+    foreach ($openSessions as $key => $session) {
+        if (strtotime($session['visit_end']) <= ($cutoff - GAP_SECONDS)) {
+            insertSession($pdo, $session);
+            $insertedSessions++;
+            $deleteIds = array_merge($deleteIds, $session['row_ids']);
+            unset($openSessions[$key]);
+        }
+    }
+
+    return $insertedSessions;
+}
+
 function run(): void
 {
     rotateLogIfNeeded();
@@ -266,6 +327,7 @@ function run(): void
     $deleteIds = [];
     $maxSeenId = $lastProcessedId;
     $batchCount = 0;
+    $checkedStrandedThisRun = false;
 
     while (true) {
         if ($batchCount >= MAX_BATCHES_PER_RUN) {
@@ -274,6 +336,17 @@ function run(): void
         }
 
         $rows = fetchRows($pdo, $lastProcessedId);
+        $batchSource = 'normal';
+
+        if (!$rows && !$checkedStrandedThisRun) {
+            $checkedStrandedThisRun = true;
+            $rows = fetchStrandedRows($pdo, $lastProcessedId);
+
+            if ($rows) {
+                $batchSource = 'stranded';
+                logMessage('No forward rows found. Found ' . count($rows) . ' stranded rows below progress marker.');
+            }
+        }
 
         if (!$rows) {
             logMessage('No eligible rows found.');
@@ -281,68 +354,14 @@ function run(): void
         }
 
         $batchCount++;
-        $insertedSessions = 0;
 
-        logMessage('Fetched ' . count($rows) . ' rows (batch ' . $batchCount . ' of ' . MAX_BATCHES_PER_RUN . ')');
-
-        foreach ($rows as $row) {
-            $id = (int)$row['id'];
-            $avatarKey = (string)$row['avatar_key_gc'];
-            $regionName = (string)$row['region_name_gc'];
-            $changeTime = (string)$row['change_time'];
-
-            $sessionKey = $avatarKey . '|' . $regionName;
-            $maxSeenId = max($maxSeenId, $id);
-
-            if (!isset($openSessions[$sessionKey])) {
-                $openSessions[$sessionKey] = [
-                    'avatar_key' => $avatarKey,
-                    'region_name' => $regionName,
-                    'visit_start' => $changeTime,
-                    'visit_end' => $changeTime,
-                    'heartbeat_count' => 1,
-                    'source_first_change_log_id' => $id,
-                    'source_last_change_log_id' => $id,
-                    'row_ids' => [$id],
-                ];
-                continue;
-            }
-
-            $gap = strtotime($changeTime) - strtotime($openSessions[$sessionKey]['visit_end']);
-
-            if ($gap <= GAP_SECONDS) {
-                $openSessions[$sessionKey]['visit_end'] = $changeTime;
-                $openSessions[$sessionKey]['heartbeat_count']++;
-                $openSessions[$sessionKey]['source_last_change_log_id'] = $id;
-                $openSessions[$sessionKey]['row_ids'][] = $id;
-            } else {
-                insertSession($pdo, $openSessions[$sessionKey]);
-                $insertedSessions++;
-                $deleteIds = array_merge($deleteIds, $openSessions[$sessionKey]['row_ids']);
-
-                $openSessions[$sessionKey] = [
-                    'avatar_key' => $avatarKey,
-                    'region_name' => $regionName,
-                    'visit_start' => $changeTime,
-                    'visit_end' => $changeTime,
-                    'heartbeat_count' => 1,
-                    'source_first_change_log_id' => $id,
-                    'source_last_change_log_id' => $id,
-                    'row_ids' => [$id],
-                ];
-            }
+        if ($batchSource === 'normal') {
+            logMessage('Fetched ' . count($rows) . ' rows (batch ' . $batchCount . ' of ' . MAX_BATCHES_PER_RUN . ')');
+        } else {
+            logMessage('Fetched ' . count($rows) . ' stranded rows (batch ' . $batchCount . ' of ' . MAX_BATCHES_PER_RUN . ')');
         }
 
-        $cutoff = time() - SAFETY_DELAY_SECONDS;
-
-        foreach ($openSessions as $key => $session) {
-            if (strtotime($session['visit_end']) <= ($cutoff - GAP_SECONDS)) {
-                insertSession($pdo, $session);
-                $insertedSessions++;
-                $deleteIds = array_merge($deleteIds, $session['row_ids']);
-                unset($openSessions[$key]);
-            }
-        }
+        $insertedSessions = processBatch($pdo, $rows, $openSessions, $deleteIds, $maxSeenId);
 
         try {
             $pdo->beginTransaction();

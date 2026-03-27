@@ -1,6 +1,3 @@
-> [!NOTE]
-> **UPDATED README**: This version reflects the current architecture, including session compression, dashboard authentication, and cron-based processing.
-
 # hails.Monitor
 
 Monitor avatar activity in Second Life, process it into structured sessions, and visualize it through a secure web dashboard.

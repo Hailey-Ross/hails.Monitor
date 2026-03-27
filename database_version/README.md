@@ -124,13 +124,24 @@ Features:
 Create `config.php` OUTSIDE your web root:
 
 ```php
-define('DB_SERVER', 'localhost');
-define('DB_USERNAME', 'username');
-define('DB_PASSWORD', 'password');
-define('DB_NAME', 'hailsmonitor');
-define('API_KEY', 'your-secret-key');
+<?php
 
-define('MONITOR_SUPERADMIN', 'your-username');
+if (php_sapi_name() !== 'cli' && !defined('ALLOW_CONFIG_INCLUDE')) {
+    http_response_code(403);
+    exit('Forbidden');
+}
+
+define('DB_SERVER', 'localhost'); //usually localhost, unless your database is hosted on a seperate server
+define('DB_USERNAME', 'YOUR-DB-USER-HERE');
+define('DB_PASSWORD', 'YOUR-PASSWORD-HERE');
+define('DB_NAME', 'DATABASE-NAME-HERE');
+define('API_KEY', 'YOUR-API-KEY-HERE'); // Add the API key here
+
+/**
+ * Monitor dashboard login
+ */
+define('MONITOR_SUPERADMIN', 'YOUR-DASHBOARD-USERNAME-HERE');
+?>
 ```
 
 Example path:

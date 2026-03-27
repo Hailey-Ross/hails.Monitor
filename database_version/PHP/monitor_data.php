@@ -13,7 +13,7 @@ if (!isset($_SESSION['monitor_logged_in']) || $_SESSION['monitor_logged_in'] !==
 }
 
 define('ALLOW_CONFIG_INCLUDE', true);
-require_once '/usr/www/mtnbound/secure/config.php';
+require_once '/usr/www/yoursitehere/secure/config.php';
 
 function db(): PDO
 {
@@ -35,7 +35,7 @@ function safeTimezone(string $timezone): string
         new DateTimeZone($timezone);
         return $timezone;
     } catch (Throwable $e) {
-        return 'America/Denver';
+        return 'America/Los_Angeles';
     }
 }
 

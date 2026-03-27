@@ -1,3 +1,6 @@
+> [!WARNING]
+> **OUT OF DATE**: Using this Readme will lead to confusion as large portions of this project have been rewritten.
+
 # hails.Monitor
 
 Monitor avatar activity in Second Life and store data in a MySQL database. This version of the script is provided as-is. 🛠️
@@ -27,6 +30,9 @@ Monitor avatar activity in Second Life and store data in a MySQL database. This 
 - **Never share your API key publicly.** [Why API security matters](https://letmegooglethat.com/?q=API+Security).
 
 ---
+
+> [!WARNING]
+> **OUT OF DATE**: Using this Readme will lead to confusion. YOU HAVE BEEN WARNED.
 
 ## ⚡️ Example Setup
 

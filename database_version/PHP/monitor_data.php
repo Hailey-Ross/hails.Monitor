@@ -13,7 +13,7 @@ if (!isset($_SESSION['monitor_logged_in']) || $_SESSION['monitor_logged_in'] !==
 }
 
 define('ALLOW_CONFIG_INCLUDE', true);
-require_once '/usr/www/yoursitehere/secure/config.php';
+require_once '/usr/www/mtnbound/secure/config.php';
 
 function db(): PDO
 {
@@ -35,7 +35,7 @@ function safeTimezone(string $timezone): string
         new DateTimeZone($timezone);
         return $timezone;
     } catch (Throwable $e) {
-        return 'America/Los_Angeles';
+        return 'America/Denver';
     }
 }
 
@@ -167,7 +167,8 @@ try {
 
     foreach ($rows as $row) {
         $ageSeconds = secondsSinceUtc($row['last_seen']);
-        if ($ageSeconds !== null && $ageSeconds <= 300) {
+
+        if ($ageSeconds !== null && $ageSeconds < 120) {
             $freshCount++;
         }
     }
@@ -183,7 +184,7 @@ try {
     </div>
 
     <div class="card">
-        <div class="label">Seen within 5 minutes</div>
+        <div class="label">Currently Active</div>
         <div class="value"><?= number_format($freshCount) ?></div>
     </div>
 
@@ -211,18 +212,29 @@ try {
             <tbody>
             <?php foreach ($rows as $row): ?>
                 <?php
-                    $ageSeconds = secondsSinceUtc($row['last_seen']);
-                    $isFresh = ($ageSeconds !== null && $ageSeconds <= 300);
-                ?>
+						$ageSeconds = secondsSinceUtc($row['last_seen']);
+						$statusClass = 'stale';
+						$statusText = 'Stale';
+
+						if ($ageSeconds !== null) {
+							if ($ageSeconds < 120) {
+								$statusClass = 'fresh';
+								$statusText = 'Active';
+							} elseif ($ageSeconds < 300) {
+								$statusClass = 'idle';
+								$statusText = 'Idle';
+							}
+						}
+					?>
                 <tr>
                     <td><?= htmlspecialchars((string)$row['avatar_name'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td><?= htmlspecialchars((string)$row['region_name'], ENT_QUOTES, 'UTF-8') ?></td>
                     <td class="visits"><?= number_format((int)$row['visit_count']) ?></td>
                     <td><?= htmlspecialchars(formatLocal($row['last_seen'], $timezone), ENT_QUOTES, 'UTF-8') ?></td>
                     <td><?= htmlspecialchars(formatAge($row['last_seen']), ENT_QUOTES, 'UTF-8') ?></td>
-                    <td class="<?= $isFresh ? 'fresh' : 'stale' ?>">
-                        <?= $isFresh ? 'Active' : 'Stale' ?>
-                    </td>
+                    <td class="<?= $statusClass ?>">
+						<?= $statusText ?>
+					</td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

@@ -1,14 +1,24 @@
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET NAMES utf8 */;
-/*!50503 SET NAMES utf8mb4 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
-CREATE DATABASE IF NOT EXISTS `hailsmonitor` /*!40100 DEFAULT CHARACTER SET utf8 */;
+CREATE DATABASE IF NOT EXISTS `hailsmonitor` 
 USE `hailsmonitor`;
+
+CREATE TABLE IF NOT EXISTS `avatar_sessions` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `avatar_key` char(36) NOT NULL,
+  `region_name` varchar(191) NOT NULL,
+  `visit_start` datetime NOT NULL,
+  `visit_end` datetime NOT NULL,
+  `heartbeat_count` int(10) unsigned NOT NULL DEFAULT '1',
+  `duration_seconds` int(10) unsigned NOT NULL DEFAULT '0',
+  `source_first_change_log_id` int(10) unsigned NOT NULL,
+  `source_last_change_log_id` int(10) unsigned NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_avatar_region_start` (`avatar_key`,`region_name`,`visit_start`),
+  KEY `idx_region_start` (`region_name`,`visit_start`),
+  KEY `idx_visit_start` (`visit_start`),
+  KEY `idx_source_range` (`source_first_change_log_id`,`source_last_change_log_id`),
+  KEY `idx_avatar_region` (`avatar_key`,`region_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=9570 DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `avatar_visits` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -19,8 +29,11 @@ CREATE TABLE IF NOT EXISTS `avatar_visits` (
   `last_seen` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `avatar_key` (`avatar_key`),
-  KEY `avatar_key_2` (`avatar_key`)
-) ENGINE=MyISAM AUTO_INCREMENT=1122 DEFAULT CHARSET=utf8;
+  KEY `avatar_key_2` (`avatar_key`),
+  KEY `idx_avatar_visits_last_seen_desc` (`last_seen`),
+  KEY `idx_avatar_visits_last_seen` (`last_seen`),
+  KEY `idx_avatar_visits_region_lastseen` (`region_name`,`last_seen`)
+) ENGINE=MyISAM AUTO_INCREMENT=9284 DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `change_log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -29,8 +42,45 @@ CREATE TABLE IF NOT EXISTS `change_log` (
   `old_data` json DEFAULT NULL,
   `new_data` json DEFAULT NULL,
   `change_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=135067 DEFAULT CHARSET=utf8;
+  `region_name_gc` varchar(255) GENERATED ALWAYS AS (json_unquote(json_extract(`new_data`,'$.region_name'))) STORED,
+  `avatar_key_gc` varchar(36) GENERATED ALWAYS AS (json_unquote(json_extract(`new_data`,'$.avatar_key'))) STORED,
+  PRIMARY KEY (`id`),
+  KEY `idx_change_log_tbl_op_time` (`table_name`,`operation`,`change_time`),
+  KEY `idx_change_log_region_avatar_time` (`region_name_gc`,`avatar_key_gc`,`change_time`),
+  KEY `idx_change_log_tbl_op_id` (`table_name`,`operation`,`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=2613913 DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE IF NOT EXISTS `compression_state` (
+  `job_name` varchar(100) NOT NULL,
+  `last_processed_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`job_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `monitor_user_regions` (
+  `user_id` int(10) unsigned NOT NULL,
+  `region_name` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`,`region_name`),
+  KEY `idx_region_name` (`region_name`),
+  CONSTRAINT `fk_monitor_user_regions_user` FOREIGN KEY (`user_id`) REFERENCES `monitor_users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `monitor_users` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `username` varchar(100) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `display_name` varchar(150) DEFAULT NULL,
+  `timezone` varchar(100) NOT NULL DEFAULT 'America/Denver',
+  `can_view_all` tinyint(1) NOT NULL DEFAULT '0',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `role` enum('user','moderator','superadmin') NOT NULL DEFAULT 'user',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_monitor_username` (`username`),
+  KEY `idx_monitor_active` (`is_active`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4;
 
 SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
 DELIMITER //
@@ -86,9 +136,3 @@ BEGIN
 END//
 DELIMITER ;
 SET SQL_MODE=@OLDTMP_SQL_MODE;
-
-/*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
-/*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
-/*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40111 SET SQL_NOTES=IFNULL(@OLD_SQL_NOTES, 1) */;

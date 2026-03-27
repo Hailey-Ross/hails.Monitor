@@ -130,7 +130,7 @@ Performs maintenance on the `change_log` table.
 4. **Analyze activity (optional)**
    - Run `changelog_op_stats.sql`
 
-5. **Evaluate compression (if using sessions)**
+5. **Evaluate compression**
    - Run `compression_ratio_query.sql`
 
 6. **Perform maintenance (Monthly / Biweekly)**

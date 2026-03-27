@@ -13,7 +13,7 @@ if (!isset($_SESSION['monitor_logged_in']) || $_SESSION['monitor_logged_in'] !==
 }
 
 define('ALLOW_CONFIG_INCLUDE', true);
-require_once '/usr/www/yoursitehere/secure/config.php';
+require_once '/usr/www/mtnbound/secure/config.php';
 
 function db(): PDO
 {
@@ -42,11 +42,12 @@ function safeTimezone(string $timezone): string
 function timezoneOptions(): array
 {
     $preferred = [
+        'America/Denver',
         'America/New_York',
         'America/Chicago',
+		'America/Chicago',
         'America/Los_Angeles',
         'America/Phoenix',
-		'America/Denver',
         'America/Anchorage',
         'Pacific/Honolulu',
         'America/Toronto',
@@ -218,7 +219,8 @@ function renderDashboardData(array $rows, string $timezone): string
 
     foreach ($rows as $row) {
         $ageSeconds = secondsSinceUtc($row['last_seen']);
-        if ($ageSeconds !== null && $ageSeconds <= 300) {
+
+        if ($ageSeconds !== null && $ageSeconds < 120) {
             $freshCount++;
         }
     }
@@ -229,7 +231,7 @@ function renderDashboardData(array $rows, string $timezone): string
             <div class="value"><?= number_format($totalAvatars) ?></div>
         </div>
         <div class="card">
-            <div class="label">Seen within 5 minutes</div>
+            <div class="label">Currently Active</div>
             <div class="value"><?= number_format($freshCount) ?></div>
         </div>
         <div class="card">
@@ -257,7 +259,18 @@ function renderDashboardData(array $rows, string $timezone): string
                 <?php foreach ($rows as $row): ?>
                     <?php
                         $ageSeconds = secondsSinceUtc($row['last_seen']);
-                        $isFresh = ($ageSeconds !== null && $ageSeconds <= 300);
+                        $statusClass = 'stale';
+                        $statusText = 'Stale';
+
+                        if ($ageSeconds !== null) {
+                            if ($ageSeconds < 120) {
+                                $statusClass = 'fresh';
+                                $statusText = 'Active';
+                            } elseif ($ageSeconds < 300) {
+                                $statusClass = 'idle';
+                                $statusText = 'Idle';
+                            }
+                        }
                     ?>
                     <tr>
                         <td><?= htmlspecialchars((string)$row['avatar_name'], ENT_QUOTES, 'UTF-8') ?></td>
@@ -265,9 +278,7 @@ function renderDashboardData(array $rows, string $timezone): string
                         <td class="visits"><?= number_format((int)$row['visit_count']) ?></td>
                         <td><?= htmlspecialchars(formatLocal($row['last_seen'], $timezone), ENT_QUOTES, 'UTF-8') ?></td>
                         <td><?= htmlspecialchars(formatAge($row['last_seen']), ENT_QUOTES, 'UTF-8') ?></td>
-                        <td class="<?= $isFresh ? 'fresh' : 'stale' ?>">
-                            <?= $isFresh ? 'Active' : 'Stale' ?>
-                        </td>
+                        <td class="<?= $statusClass ?>"><?= $statusText ?></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -749,19 +760,64 @@ if ($settingsMessage !== '' || $settingsError !== '') {
         }
 
         .top-links {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
             font-size: 14px;
         }
 
-        .top-links a,
-        .top-links button {
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #1a2128;
+            border: 1px solid #2d3742;
+            color: #d8e6ff;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-chip.paused {
+            color: #ffd39a;
+            border-color: rgba(255, 180, 80, 0.35);
+            background: rgba(255, 180, 80, 0.08);
+        }
+		
+		#last-updated {
+			color: #b5bcc4;
+			font-weight: normal;
+		}
+
+        .top-links a {
             color: #9fc6ff;
             text-decoration: none;
-            background: none;
-            border: 0;
-            padding: 0;
-            margin: 0;
-            font: inherit;
+        }
+
+        .mini-action {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            border: 1px solid #2d3742;
+            background: #1a2128;
+            color: #eef2f5;
             cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mini-action:hover {
+            background: #202933;
+        }
+
+        .mini-action.active {
+            background: #2b436f;
+            border-color: #4b76be;
         }
 
         .quick-actions {
@@ -817,6 +873,11 @@ if ($settingsMessage !== '' || $settingsError !== '') {
             transition: opacity 0.15s ease;
             z-index: 20;
         }
+		
+		.top-links .tooltip-text {
+			top: calc(100% + 8px);
+			bottom: auto;
+		}
 
         .tooltip-wrap:hover .tooltip-text {
             opacity: 1;
@@ -916,8 +977,7 @@ if ($settingsMessage !== '' || $settingsError !== '') {
 
         .settings-form button,
         .user-edit-form button,
-        .user-delete-form button,
-        .restricted-note button {
+        .user-delete-form button {
             width: fit-content;
             padding: 10px 16px;
             border: 0;
@@ -1089,11 +1149,29 @@ if ($settingsMessage !== '' || $settingsError !== '') {
             color: #9ee7a1;
             font-weight: bold;
         }
+		
+		.idle {
+			color: #ffd39a;
+			font-weight: bold;
+		}
 
         .stale {
             color: #ffb0b0;
             font-weight: bold;
         }
+		
+		.row-just-active td {
+			animation: rowJustActiveFlash 2.2s ease;
+		}
+
+		@keyframes rowJustActiveFlash {
+			0% {
+				background: rgba(40, 140, 70, 0.35);
+			}
+			100% {
+				background: transparent;
+			}
+		}
 
         .empty {
             padding: 20px;
@@ -1105,9 +1183,20 @@ if ($settingsMessage !== '' || $settingsError !== '') {
     <div class="topbar">
         <h1>hails.Monitor Dashboard</h1>
         <div class="top-links">
-            Auto-updates every 30 seconds |
-            <button type="button" id="manual-refresh">Refresh now</button> |
-            Logged in as <?= htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') ?> |
+            <span id="refresh-status" class="status-chip">Live</span>
+			<span id="last-updated" class="status-chip">Updated just now</span>
+
+            <span class="tooltip-wrap">
+                <button type="button" id="manual-refresh" class="mini-action" aria-label="Refresh now">🔄</button>
+                <span class="tooltip-text">Refresh now</span>
+            </span>
+
+            <span class="tooltip-wrap">
+                <button type="button" id="toggle-refresh" class="mini-action" aria-label="Pause auto-refresh">⏸️</button>
+                <span class="tooltip-text" id="toggle-refresh-tooltip">Pause auto-refresh</span>
+            </span>
+
+            <span>Logged in as <?= htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') ?></span>
             <a href="monitor_logout.php">Log out</a>
         </div>
     </div>
@@ -1464,32 +1553,32 @@ if ($settingsMessage !== '' || $settingsError !== '') {
 
     <script>
         (function () {
-			const liveRegion = document.getElementById('dashboard-live-region');
+            const liveRegion = document.getElementById('dashboard-live-region');
             const ajaxError = document.getElementById('dashboard-ajax-error');
             const manualRefreshButton = document.getElementById('manual-refresh');
+            const toggleRefreshButton = document.getElementById('toggle-refresh');
+            const toggleRefreshTooltip = document.getElementById('toggle-refresh-tooltip');
+            const refreshStatus = document.getElementById('refresh-status');
             const toggleButtons = Array.from(document.querySelectorAll('.icon-toggle'));
+			const lastUpdatedIndicator = document.getElementById('last-updated');
             const panels = {
                 settings: document.getElementById('panel-settings'),
                 'create-user': document.getElementById('panel-create-user'),
                 'manage-users': document.getElementById('panel-manage-users')
             };
-            let lastFreshCount = null;
-			let refreshIntervalId = null;
+
+            const refreshStorageKey = 'monitor_refresh_paused_' + <?= json_encode($monitorUsername, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+			const panelStorageKey = 'monitor_open_panel_' + <?= json_encode($monitorUsername, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+
+            let refreshIntervalId = null;
             let isRefreshing = false;
             let activePanel = <?= json_encode($openPanel, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
-			let glowLevel = '';
-			
-			function getFreshCountFromDOM() {
-			  const cards = document.querySelectorAll('.summary .card');
-			  if (cards.length < 2) return null;
+            let lastFreshCount = null;
+            let glowLevel = '';
+            let isRefreshPaused = false;
+			let lastUpdatedAt = Date.now();
+			let lastUpdatedTimerId = null;
 
-			  const valueEl = cards[1].querySelector('.value');
-			  if (!valueEl) return null;
-
-			  const value = parseInt(valueEl.textContent.replace(/,/g, ''), 10);
-			  return isNaN(value) ? null : value;
-			}
-			
             function applyPanelState() {
                 toggleButtons.forEach((button) => {
                     const panelName = button.getAttribute('data-panel');
@@ -1505,68 +1594,239 @@ if ($settingsMessage !== '' || $settingsError !== '') {
                 });
             }
 
-            toggleButtons.forEach((button) => {
-                button.addEventListener('click', function () {
-                    const panelName = button.getAttribute('data-panel');
-                    activePanel = (activePanel === panelName) ? '' : panelName;
-                    applyPanelState();
-                });
-            });
+            function getFreshCountFromDOM() {
+                const cards = document.querySelectorAll('.summary .card');
+                if (cards.length < 2) return null;
 
-			function getFreshCountFromDOM() {
-				const cards = document.querySelectorAll('.summary .card');
-				if (cards.length < 2) return null;
+                const valueEl = cards[1].querySelector('.value');
+                if (!valueEl) return null;
 
-				const valueEl = cards[1].querySelector('.value');
-				if (!valueEl) return null;
+                const value = parseInt(valueEl.textContent.replace(/,/g, ''), 10);
+                return isNaN(value) ? null : value;
+            }
 
-				const value = parseInt(valueEl.textContent.replace(/,/g, ''), 10);
-				return isNaN(value) ? null : value;
+            function setMonitorGlow(level) {
+                if (window.parent === window) {
+                    return;
+                }
+
+                const parentDoc = window.parent.document;
+                const toggle = parentDoc.getElementById('monitorToggle');
+                const panel = parentDoc.getElementById('monitorPanel');
+
+                if (!toggle) {
+                    return;
+                }
+
+                toggle.classList.remove('activity-glow-slow', 'activity-glow-fast');
+
+                if (!level) {
+                    glowLevel = '';
+                    return;
+                }
+
+                if (panel && panel.classList.contains('open')) {
+                    glowLevel = level;
+                    return;
+                }
+
+                if (level === 'fast') {
+                    toggle.classList.add('activity-glow-fast');
+                } else {
+                    toggle.classList.add('activity-glow-slow');
+                }
+
+                glowLevel = level;
+            }
+
+            function clearMonitorGlow() {
+                setMonitorGlow('');
+            }
+
+            function reapplyMonitorGlowIfNeeded() {
+                if (glowLevel) {
+                    setMonitorGlow(glowLevel);
+                }
+            }
+			
+			
+			function getRowStatusMap(root) {
+			const map = new Map();
+				if (!root) {
+					return map;
+				}
+
+				const rows = root.querySelectorAll('tbody tr');
+
+				rows.forEach(function (row) {
+					const cells = row.querySelectorAll('td');
+					if (cells.length < 6) {
+						return;
+					}
+
+					const avatar = cells[0].textContent.trim();
+					const region = cells[1].textContent.trim();
+					const status = cells[5].textContent.trim();
+					const key = avatar + '||' + region;
+
+					map.set(key, status);
+				});
+
+				return map;
 			}
 
-			function setMonitorGlow(level) {
-				if (window.parent === window) {
+			function highlightNewlyActiveRows(oldStatusMap, root) {
+				if (!root) {
 					return;
 				}
 
-				const parentDoc = window.parent.document;
-				const toggle = parentDoc.getElementById('monitorToggle');
-				const panel = parentDoc.getElementById('monitorPanel');
+				const rows = root.querySelectorAll('tbody tr');
 
-				if (!toggle) {
+				rows.forEach(function (row) {
+					const cells = row.querySelectorAll('td');
+					if (cells.length < 6) {
+						return;
+					}
+
+					const avatar = cells[0].textContent.trim();
+					const region = cells[1].textContent.trim();
+					const status = cells[5].textContent.trim();
+					const key = avatar + '||' + region;
+					const previousStatus = oldStatusMap.get(key);
+
+					if (status === 'Active' && previousStatus && previousStatus !== 'Active') {
+						row.classList.add('row-just-active');
+
+						setTimeout(function () {
+							row.classList.remove('row-just-active');
+						}, 2200);
+					}
+				});
+			}
+			
+
+            function loadPausePreference() {
+                try {
+                    isRefreshPaused = localStorage.getItem(refreshStorageKey) === '1';
+                } catch (error) {
+                    isRefreshPaused = false;
+                }
+            }
+
+            function savePausePreference() {
+                try {
+                    localStorage.setItem(refreshStorageKey, isRefreshPaused ? '1' : '0');
+                } catch (error) {
+                    // Ignore storage issues
+                }
+            }
+			
+			function loadPanelPreference() {
+				try {
+					const savedPanel = localStorage.getItem(panelStorageKey) || '';
+					if (savedPanel && Object.prototype.hasOwnProperty.call(panels, savedPanel)) {
+						activePanel = savedPanel;
+					}
+				} catch (error) {
+					// Ignore storage issues
+				}
+			}
+
+			function savePanelPreference() {
+				try {
+					localStorage.setItem(panelStorageKey, activePanel || '');
+				} catch (error) {
+					// Ignore storage issues
+				}
+			}
+
+            function updateRefreshUI() {
+                if (toggleRefreshButton) {
+                    toggleRefreshButton.textContent = isRefreshPaused ? '▶️' : '⏸️';
+                    toggleRefreshButton.setAttribute('aria-label', isRefreshPaused ? 'Resume auto-refresh' : 'Pause auto-refresh');
+                    toggleRefreshButton.classList.toggle('active', isRefreshPaused);
+                }
+
+                if (toggleRefreshTooltip) {
+                    toggleRefreshTooltip.textContent = isRefreshPaused ? 'Resume auto-refresh' : 'Pause auto-refresh';
+                }
+
+                if (refreshStatus) {
+                    refreshStatus.textContent = isRefreshPaused ? 'Paused' : 'Live';
+                    refreshStatus.classList.toggle('paused', isRefreshPaused);
+                }
+            }
+			
+			function updateLastUpdatedText() {
+				if (!lastUpdatedIndicator) {
 					return;
 				}
 
-				toggle.classList.remove('activity-glow-slow', 'activity-glow-fast');
+				const seconds = Math.max(0, Math.floor((Date.now() - lastUpdatedAt) / 1000));
 
-				if (!level) {
-					glowLevel = '';
-					return;
-				}
-
-				if (panel && panel.classList.contains('open')) {
-					glowLevel = level;
-					return;
-				}
-
-				if (level === 'fast') {
-					toggle.classList.add('activity-glow-fast');
+				if (seconds <= 1) {
+					lastUpdatedIndicator.textContent = 'Updated just now';
 				} else {
-					toggle.classList.add('activity-glow-slow');
-				}
-
-				glowLevel = level;
-			}
-
-			function clearMonitorGlow() {
-				setMonitorGlow('');
-			}
-
-			function reapplyMonitorGlowIfNeeded() {
-				if (glowLevel) {
-					setMonitorGlow(glowLevel);
+					lastUpdatedIndicator.textContent = 'Updated ' + seconds + 's ago';
 				}
 			}
+
+			function markUpdatedNow() {
+				lastUpdatedAt = Date.now();
+				updateLastUpdatedText();
+			}
+
+			function startLastUpdatedTimer() {
+				if (lastUpdatedTimerId !== null) {
+					clearInterval(lastUpdatedTimerId);
+				}
+
+				lastUpdatedTimerId = setInterval(function () {
+					updateLastUpdatedText();
+				}, 1000);
+			}
+
+            function stopAutoRefresh() {
+                if (refreshIntervalId !== null) {
+                    clearInterval(refreshIntervalId);
+                    refreshIntervalId = null;
+                }
+            }
+
+            function startAutoRefresh() {
+                stopAutoRefresh();
+
+                if (isRefreshPaused) {
+                    return;
+                }
+
+                refreshIntervalId = setInterval(function () {
+                    if (!document.hidden) {
+                        refreshDashboardData(false);
+                    }
+                }, 30000);
+            }
+
+            function toggleAutoRefresh() {
+                isRefreshPaused = !isRefreshPaused;
+                savePausePreference();
+                updateRefreshUI();
+
+                if (isRefreshPaused) {
+                    stopAutoRefresh();
+                } else {
+                    startAutoRefresh();
+                }
+            }
+
+            toggleButtons.forEach((button) => {
+				button.addEventListener('click', function () {
+					const panelName = button.getAttribute('data-panel');
+					activePanel = (activePanel === panelName) ? '' : panelName;
+					savePanelPreference();
+					applyPanelState();
+				});
+			});
 
             async function refreshDashboardData(showError = true) {
                 if (isRefreshing) {
@@ -1590,51 +1850,42 @@ if ($settingsMessage !== '' || $settingsError !== '') {
                     }
 
                     const html = await response.text();
+					const oldStatusMap = getRowStatusMap(liveRegion);
 
 					if (liveRegion) {
 						liveRegion.innerHTML = html;
-
+						highlightNewlyActiveRows(oldStatusMap, liveRegion);
+						
 						const newFreshCount = getFreshCountFromDOM();
 
-						if (newFreshCount !== null) {
-							if (lastFreshCount !== null && newFreshCount > lastFreshCount) {
-								const increase = newFreshCount - lastFreshCount;
+                        if (newFreshCount !== null) {
+                            if (lastFreshCount !== null && newFreshCount > lastFreshCount) {
+                                const increase = newFreshCount - lastFreshCount;
 
-								if (increase >= 3) {
-									setMonitorGlow('fast');
-								} else {
-									setMonitorGlow('slow');
-								}
-							}
+                                if (increase >= 3) {
+                                    setMonitorGlow('fast');
+                                } else {
+                                    setMonitorGlow('slow');
+                                }
+                            }
 
-							lastFreshCount = newFreshCount;
-						}
-					}
+                            lastFreshCount = newFreshCount;
+                        }
+                    }
 
-					if (ajaxError) {
-						ajaxError.style.display = 'none';
-						ajaxError.textContent = '';
-					}
+                    if (ajaxError) {
+                        ajaxError.style.display = 'none';
+                        ajaxError.textContent = '';
+                    }
+					markUpdatedNow();
                 } catch (error) {
                     if (showError && ajaxError) {
-                        ajaxError.textContent = 'Live refresh failed. The page is still usable. You can click Refresh now or reload the page.';
+                        ajaxError.textContent = 'Live refresh failed. The page is still usable. You can click refresh or reload the page.';
                         ajaxError.style.display = 'block';
                     }
                 } finally {
                     isRefreshing = false;
                 }
-            }
-
-            function startAutoRefresh() {
-                if (refreshIntervalId !== null) {
-                    clearInterval(refreshIntervalId);
-                }
-
-                refreshIntervalId = setInterval(function () {
-                    if (!document.hidden) {
-                        refreshDashboardData(false);
-                    }
-                }, 30000);
             }
 
             if (manualRefreshButton) {
@@ -1643,38 +1894,48 @@ if ($settingsMessage !== '' || $settingsError !== '') {
                 });
             }
 
+            if (toggleRefreshButton) {
+                toggleRefreshButton.addEventListener('click', function () {
+                    toggleAutoRefresh();
+                });
+            }
+
             document.addEventListener('visibilitychange', function () {
-                if (!document.hidden) {
+                if (!document.hidden && !isRefreshPaused) {
                     refreshDashboardData(false);
                 }
             });
 
+			loadPausePreference();
+			loadPanelPreference();
 			applyPanelState();
 			lastFreshCount = getFreshCountFromDOM();
+			updateRefreshUI();
+			markUpdatedNow();
+			startLastUpdatedTimer();
 
-			try {
-				if (window.parent && window.parent !== window) {
-					const parentDoc = window.parent.document;
-					const parentPanel = parentDoc.getElementById('monitorPanel');
-					const parentToggle = parentDoc.getElementById('monitorToggle');
+            try {
+                if (window.parent && window.parent !== window) {
+                    const parentDoc = window.parent.document;
+                    const parentPanel = parentDoc.getElementById('monitorPanel');
+                    const parentToggle = parentDoc.getElementById('monitorToggle');
 
-					if (parentToggle) {
-						parentToggle.addEventListener('click', function () {
-							setTimeout(function () {
-								if (parentPanel && parentPanel.classList.contains('open')) {
-									clearMonitorGlow();
-								} else {
-									reapplyMonitorGlowIfNeeded();
-								}
-							}, 10);
-						});
-					}
-				}
-			} catch (error) {
-				// Ignore cross-frame issues if they ever happen
-			}
-
-			startAutoRefresh();
+                    if (parentToggle) {
+                        parentToggle.addEventListener('click', function () {
+                            setTimeout(function () {
+                                if (parentPanel && parentPanel.classList.contains('open')) {
+                                    clearMonitorGlow();
+                                } else {
+                                    reapplyMonitorGlowIfNeeded();
+                                }
+                            }, 10);
+                        });
+                    }
+                }
+            } catch (error) {
+                // Ignore cross-frame issues if they ever happen
+		}
+            startAutoRefresh();
         })();
     </script>
 </body>

@@ -1,4 +1,4 @@
-> [!CAUTION]
+> [!NOTE]
 > **UPDATED README**: This version reflects the current architecture, including session compression, dashboard authentication, and cron-based processing.
 
 # hails.Monitor
@@ -10,6 +10,12 @@ This project has evolved significantly from earlier versions and now includes:
 - Automated compression jobs
 - A full authentication system
 - A live dashboard UI
+
+---
+
+## 🖼️ Preview
+
+<img width="1920" height="964" alt="web-ui-preview" src="https://github.com/user-attachments/assets/c5088f59-13de-459a-bc9e-cf7273419558" />
 
 ---
 

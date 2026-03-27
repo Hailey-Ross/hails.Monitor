@@ -7,6 +7,7 @@ This project has evolved significantly from earlier versions and now includes:
 - Automated compression jobs
 - A full authentication system
 - A live dashboard UI
+- Multiuser support
 
 ---
 
@@ -221,14 +222,56 @@ You MUST configure cron jobs for:
 
 ---
 
-### 9. Access Dashboard
+### 9. Setup / Access Dashboard
 
-Visit:
+#### 9.1 Generate a Password Hash
+Run the following command in your CLI:
+
+```bash
+php -r 'echo password_hash("YourStrongPasswordHere", PASSWORD_DEFAULT), PHP_EOL;'
 ```
+
+---
+
+#### 9.2 Insert Super User
+
+Ensure the username matches the super admin defined in \`config.php\`, then run the following SQL:
+
+```sql
+INSERT INTO monitor_users (
+    username,
+    password_hash,
+    display_name,
+    timezone,
+    can_view_all,
+    is_active
+) VALUES (
+    'YOUR_USERNAME_HERE',
+    'PASTE_HASH_HERE',
+    'DISPLAY_NAME_HERE',
+    'America/Boston',
+    1,
+    1
+);
+```
+
+**What makes this a super admin?**
+
+- \`can_view_all = 1\` → Can view all regions  
+- \`is_active = 1\` → Account is enabled  
+- Must be defined in \`config.php\`  
+
+---
+
+#### 9.3 Access the Dashboard
+
+Navigate to:
+
+\`\`\`text
 https://yourdomain.com/index.html
-```
+\`\`\`
 
-Log in using credentials from your database.
+Log in using the credentials for the user you just created.
 
 ---
 
@@ -276,6 +319,7 @@ Supports:
 - ❌ Not running cron jobs
 - ❌ Incorrect file paths to config
 - ❌ Missing database indexes
+- ❌ Not rotating API-Keys or Passwords when exposed
 
 ---
 

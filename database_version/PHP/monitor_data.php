@@ -13,7 +13,7 @@ if (!isset($_SESSION['monitor_logged_in']) || $_SESSION['monitor_logged_in'] !==
 }
 
 define('ALLOW_CONFIG_INCLUDE', true);
-require_once '/usr/www/mtnbound/secure/config.php';
+require_once '/path/to/your/hosted/config.php';
 
 function db(): PDO
 {

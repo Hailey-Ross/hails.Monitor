@@ -53,23 +53,21 @@ This system works in multiple stages:
 
 ### 1. Data Collection (LSL Scripts)
 - `hails.Monitor.lsl`
-- `hails.Lookup.lsl`
 - `hails.CronServer.lsl`
 - `hails.HUDmon-BETA.lsl`
-- `hails.Watchdog.lsl`
 
 These send avatar data to your server via API.
 
 ---
 
 ### 2. API Layer
-- `av.php` → handles batch inserts & queries :contentReference[oaicite:0]{index=0}  
-- `avCron.php` → handles name cleanup + maintenance :contentReference[oaicite:1]{index=1}  
+- `av.php` → handles batch inserts & queries  
+- `avCron.php` → handles name cleanup + maintenance
 
 ---
 
 ### 3. Database Layer
-- Created via: `run_me.sql` :contentReference[oaicite:2]{index=2}  
+- Created via: `run_me.sql`  
 
 Includes:
 - `avatar_visits` (raw data)
@@ -81,7 +79,7 @@ Includes:
 ---
 
 ### 4. Processing Layer (CRON REQUIRED)
-- `hailsDBCompressCron.php` :contentReference[oaicite:3]{index=3}  
+- `hailsDBCompressCron.php` 
 
 This:
 - Converts raw logs into sessions
@@ -91,11 +89,11 @@ This:
 ---
 
 ### 5. Dashboard + UI
-- `monitor_dashboard.php` :contentReference[oaicite:4]{index=4}  
-- `monitor_data.php` :contentReference[oaicite:5]{index=5}  
-- `monitor_login.php` :contentReference[oaicite:6]{index=6}  
-- `monitor_logout.php` :contentReference[oaicite:7]{index=7}  
-- `index.html` (frontend container) :contentReference[oaicite:8]{index=8}  
+- `monitor_dashboard.php`
+- `monitor_data.php`  
+- `monitor_login.php`  
+- `monitor_logout.php` 
+- `index.html` (frontend container) 
 
 Features:
 - Secure login system
@@ -185,18 +183,8 @@ You MUST configure cron jobs for:
 
 #### Main Processing Job:
 ```
-* * * * * php /path/to/hailsDBCompressCron.php
+*/30 * * * * /usr/bin/php /path/to/your/hosted/hailsDBCompressCron.php >/dev/null 2>&1
 ```
-
-#### Optional Maintenance:
-```
-*/5 * * * * php /path/to/avCron.php
-```
-
-#### Optional crontab file:
-- `crontab.cron`
-
----
 
 ### 8. Deploy LSL Scripts
 
@@ -213,7 +201,7 @@ You MUST configure cron jobs for:
 
 Visit:
 ```
-https://yourdomain.com/monitor_login.php
+https://yourdomain.com/index.html
 ```
 
 Log in using credentials from your database.

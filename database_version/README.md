@@ -1,94 +1,295 @@
-> [!WARNING]
-> **OUT OF DATE**: Using this Readme will lead to confusion as large portions of this project have been rewritten.
+> [!CAUTION]
+> **UPDATED README**: This version reflects the current architecture, including session compression, dashboard authentication, and cron-based processing.
 
 # hails.Monitor
 
-Monitor avatar activity in Second Life and store data in a MySQL database. This version of the script is provided as-is. 🛠️
+Monitor avatar activity in Second Life, process it into structured sessions, and visualize it through a secure web dashboard.
+
+This project has evolved significantly from earlier versions and now includes:
+- Session-based tracking (not just raw visits)
+- Automated compression jobs
+- A full authentication system
+- A live dashboard UI
 
 ---
 
 ## 📦 What You'll Need:
 
-- **Webserver:**
-  - [Find a Web Host](https://letmegooglethat.com/?q=webhosting)
-- **Database:** MySQL recommended.
-- **SQL Client:**
-  - [HeidiSQL](https://www.heidisql.com/)
-  - [DBeaver](https://dbeaver.io/)
-  - [Other Options](https://alternativeto.net/software/heidisql/)
-- **Basic Database Knowledge:** You'll need to run SQL scripts and manage tables.
+- **Webserver (Required)**
+  - Apache or Nginx recommended
+- **Database**
+  - MySQL / MariaDB
+- **PHP**
+  - PHP 8+ recommended
+- **SQL Client**
+  - HeidiSQL, DBeaver, or similar
+- **Cron Access (IMPORTANT)**
+  - Required for session compression and maintenance jobs
+
+---
 
 ## ✅ Optional but Recommended:
 
-- [Grafana](https://grafana.com/): Free tier works great for visualizing data.
+- Grafana (for advanced analytics)
+- HTTPS (strongly recommended for security)
 
 ---
 
-## 🚨 Important Security Notes:
+## 🚨 CRITICAL SECURITY NOTES:
 
-- **Don't host `config.php` in a public directory.** [Secure your config file](https://letmegooglethat.com/?q=How+to+securely+host+a+config+file).
-- **Never share your API key publicly.** [Why API security matters](https://letmegooglethat.com/?q=API+Security).
+- **ALL config files MUST be stored in a secure, non-public directory.**
+  - Example: `/usr/www/yourdomain/secure/config.php`
+- **NEVER place `config.php` inside your public web root.**
+- **DO NOT expose your API key.**
+- **DO NOT commit credentials to GitHub.**
+
+> If your config file is accessible via a browser, your system is compromised.
 
 ---
 
-> [!WARNING]
-> **OUT OF DATE**: Using this Readme will lead to confusion. YOU HAVE BEEN WARNED.
+## 🧠 Project Overview
 
-## ⚡️ Example Setup
+This system works in multiple stages:
 
-**Note:** The folder structure will follow the layout in this repo. Everything in the `PHP` folder should go in the desired directory on your webserver.
+### 1. Data Collection (LSL Scripts)
+- `hails.Monitor.lsl`
+- `hails.Lookup.lsl`
+- `hails.CronServer.lsl`
+- `hails.HUDmon-BETA.lsl`
+- `hails.Watchdog.lsl`
 
-### 1. Download the Files:
+These send avatar data to your server via API.
 
-- Grab the contents of the `PHP` folder and move them to your local machine.
-- Copy the LSL scripts (`hails.Monitor.lsl`, `hails.Lookup.lsl`, `hails.CronServer.lsl`, `hails.HUDmon.lsl`) into your Second Life inventory.
+---
 
-### 2. Update Server URL:
+### 2. API Layer
+- `av.php` → handles batch inserts & queries :contentReference[oaicite:0]{index=0}  
+- `avCron.php` → handles name cleanup + maintenance :contentReference[oaicite:1]{index=1}  
 
-- Update the `server_url` variable in the LSL scripts to point to your webserver hosting `av.php`:
-  ```lsl
-  string server_url = "https://YOUR-SITE-HERE.tld/av.php";
-  ```
-  Edit this in `hails.Lookup.lsl`, `hails.Monitor.lsl`, `hails.CronServer.lsl`, `hails.HUDmon.lsl`.
+---
 
-### 3. Create an API Key:
+### 3. Database Layer
+- Created via: `run_me.sql` :contentReference[oaicite:2]{index=2}  
 
-- Generate a key and update all relevant locations:
-  ```lsl
-  string API_KEY = "YOUR-SECRET-KEY";
-  ```
-  Edit in `config.php`, `hails.Lookup.lsl`, `hails.Monitor.lsl`, `hails.CronServer.lsl`, `hails.HUDmon.lsl`.
+Includes:
+- `avatar_visits` (raw data)
+- `change_log` (audit trail)
+- `avatar_sessions` (compressed sessions)
+- `monitor_users` (auth system)
+- `monitor_user_regions` (permissions)
 
-### 4. Upload to Webserver:
+---
 
-- Connect via FTP/SFTP.
-- Upload the contents of the `PHP` folder to the root of your server.
+### 4. Processing Layer (CRON REQUIRED)
+- `hailsDBCompressCron.php` :contentReference[oaicite:3]{index=3}  
 
-### 5. Run the SQL Script:
+This:
+- Converts raw logs into sessions
+- Reduces database size
+- Tracks progress via `compression_state`
 
-- Open your SQL client (e.g., HeidiSQL, DBeaver).
-- Execute the `run_me.sql` file found in the `SQL` folder to set up the database tables.
+---
 
-### 6. Secure Your Config:
+### 5. Dashboard + UI
+- `monitor_dashboard.php` :contentReference[oaicite:4]{index=4}  
+- `monitor_data.php` :contentReference[oaicite:5]{index=5}  
+- `monitor_login.php` :contentReference[oaicite:6]{index=6}  
+- `monitor_logout.php` :contentReference[oaicite:7]{index=7}  
+- `index.html` (frontend container) :contentReference[oaicite:8]{index=8}  
 
-- Include the `.htaccess` file in the same directory as `config.php` to restrict access.
-- There's also an optional `.htaccess` file in the same folder as `av.php` if no `index` file is present.
+Features:
+- Secure login system
+- Role-based access (user / moderator / superadmin)
+- Region filtering
+- Live activity tracking
+- Session-based analytics
 
-### 7. Deploy the LSL Scripts:
+---
 
-- Place `hails.Monitor.lsl` and `hails.Lookup.lsl` in an object in Second Life.
-  - `hails.Lookup.lsl` can also be used as a standalone lookup script.
-- Deploy `hails.CronServer.lsl` in another object to handle periodic checks.
-  - Toggle debug on channel 3: `/3 toggle debug`
+## ⚡️ Setup Instructions
 
-### 8. Troubleshooting:
+### 1. Download Files
 
-- If nothing happens:
-  - Say `/2 toggle debug` in chat and resend the command after 5-10 seconds.
-  - Check the output for error messages.
-  - Check server logs and console for PHP errors.
+- Upload all PHP files to your webserver
+- Place LSL scripts into Second Life inventory
 
-### 9. Tighten Up Security:
+---
 
-- Revisit your API key setup and consider rotating keys periodically.
-- Check out best practices for [API security](https://letmegooglethat.com/?q=API+Security).
+### 2. Create Secure Config
+
+Create `config.php` OUTSIDE your web root:
+
+```php
+define('DB_SERVER', 'localhost');
+define('DB_USERNAME', 'username');
+define('DB_PASSWORD', 'password');
+define('DB_NAME', 'hailsmonitor');
+define('API_KEY', 'your-secret-key');
+
+define('MONITOR_SUPERADMIN', 'your-username');
+```
+
+Example path:
+```
+/usr/www/yourdomain/secure/config.php
+```
+
+Then update ALL PHP files to point to it.
+
+---
+
+### 3. Configure API Key
+
+Set the same key in:
+- `config.php`
+- ALL LSL scripts
+
+```lsl
+string API_KEY = "YOUR-SECRET-KEY";
+```
+
+---
+
+### 4. Update Server URL
+
+Update in all LSL scripts:
+
+```lsl
+string server_url = "https://yourdomain.com/av.php";
+```
+
+---
+
+### 5. Upload Files
+
+- Upload PHP files to your web root
+- Ensure `.htaccess` is included if used
+
+---
+
+### 6. Run SQL Script
+
+Execute:
+
+```
+run_me.sql
+```
+
+This creates all required tables and indexes.
+
+---
+
+### 7. Configure Cron Jobs (VERY IMPORTANT)
+
+You MUST configure cron jobs for:
+
+#### Main Processing Job:
+```
+* * * * * php /path/to/hailsDBCompressCron.php
+```
+
+#### Optional Maintenance:
+```
+*/5 * * * * php /path/to/avCron.php
+```
+
+#### Optional crontab file:
+- `crontab.cron`
+
+---
+
+### 8. Deploy LSL Scripts
+
+- Place in-world objects with:
+  - `hails.Monitor.lsl`
+  - `hails.Lookup.lsl`
+- Deploy:
+  - `hails.CronServer.lsl` (handles periodic tasks)
+  - `hails.Watchdog.lsl` (monitoring/health)
+
+---
+
+### 9. Access Dashboard
+
+Visit:
+```
+https://yourdomain.com/monitor_login.php
+```
+
+Log in using credentials from your database.
+
+---
+
+## 🔐 Authentication System
+
+Supports:
+- User roles:
+  - user
+  - moderator
+  - superadmin
+- Region-based access control
+- Secure password hashing
+- Session-based login
+
+---
+
+## 📊 Data Flow Summary
+
+1. LSL → sends avatar data
+2. `av.php` → stores raw visits
+3. `change_log` → tracks changes
+4. `hailsDBCompressCron.php` → builds sessions
+5. Dashboard → displays processed data
+
+---
+
+## 🧹 Maintenance Notes
+
+- Monitor log file sizes (`phpcron.txt`)
+- Ensure cron jobs are running
+- Periodically verify:
+  - `compression_state`
+  - session growth
+- Clean old logs if needed
+
+---
+
+## ⚠️ Common Mistakes
+
+- ❌ Putting `config.php` in public directory
+- ❌ Forgetting to set API key everywhere
+- ❌ Not running cron jobs
+- ❌ Incorrect file paths to config
+- ❌ Missing database indexes
+
+---
+
+## 🛠️ Notes
+
+- This project assumes moderate familiarity with:
+  - PHP
+  - MySQL
+  - Cron jobs
+- Debug logging is built into several components
+- System is designed for scalability via session compression
+
+---
+
+## 🧾 Final Notes
+
+This is no longer a simple visit tracker, it is a **full monitoring platform**.
+
+Take the time to:
+- Secure it properly
+- Verify cron jobs
+- Keep config files protected
+
+If something breaks, check:
+- Config path
+- API key
+- Cron execution
+- Database connectivity
+
+---
+
+Enjoy ❤️

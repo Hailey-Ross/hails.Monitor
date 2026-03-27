@@ -34,7 +34,7 @@ This project has evolved significantly from earlier versions and now includes:
 ## ✅ Optional but Recommended:
 
 - Grafana (for advanced analytics)
-- HTTPS (strongly recommended for security)
+- HTTPS/SSL (strongly recommended for security)
 
 ---
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 session_start();
 
 define('ALLOW_CONFIG_INCLUDE', true);
-require_once '/usr/www/mtnbound/secure/config.php';
+require_once '/usr/www/yoursitehere/secure/config.php';
 
 function db(): PDO
 {

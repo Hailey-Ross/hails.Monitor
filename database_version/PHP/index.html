@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<!-- Begin Spaghetti Code
+Author: Hailey
+Site: Mountain Bound | Hails.cc
+Revision: 0.1.0a
+Updated: 03/26/2026
+-->
+<html>
+<head>
+  <title>Hail.e</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style type="text/css">
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      cursor: none;
+      position: relative;
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+      background-color: black;
+      font-family: Arial, sans-serif;
+    }
+
+    #particles-js {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    #particles-js canvas {
+      background: transparent !important;
+    }
+
+    #Logo {
+      position: fixed;
+      visibility: visible;
+      height: 203px;
+      width: 203px;
+      top: 35%;
+      right: 45%;
+      z-index: 5;
+    }
+
+    #music-player {
+      position: sticky;
+      visibility: visible;
+      height: 150px;
+      width: 522px;
+      top: 82%;
+      right: 71%;
+    }
+
+    #hailsCursor {
+      position: absolute;
+      z-index: 10000;
+      pointer-events: none;
+    }
+
+    #monitorToggle {
+		position: fixed;
+		top: 20px;
+		right: 20px;
+		z-index: 50;
+		width: 52px;
+		height: 52px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+
+		color: #f4f7fb;
+		font-size: 22px;
+		line-height: 1;
+
+		background: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 0.16) 0%,
+		rgba(255, 255, 255, 0.08) 100%
+		);
+		border: 1px solid rgba(255, 255, 255, 0.22);
+		border-radius: 16px;
+
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+
+		box-shadow:
+		0 10px 30px rgba(0, 0, 0, 0.34),
+		inset 0 1px 0 rgba(255, 255, 255, 0.18),
+		inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+
+		cursor: pointer;
+		transition:
+		transform 0.18s ease,
+		background 0.18s ease,
+		box-shadow 0.18s ease,
+		border-color 0.18s ease,
+		width 0.22s ease,
+		height 0.22s ease,
+		font-size 0.22s ease,
+		top 0.22s ease,
+		right 0.22s ease;
+	}
+
+	#monitorToggle:hover {
+	  transform: translateY(-1px);
+	  background: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 0.2) 0%,
+		rgba(255, 255, 255, 0.1) 100%
+	  );
+	  border-color: rgba(255, 255, 255, 0.3);
+	  box-shadow:
+		0 14px 34px rgba(0, 0, 0, 0.38),
+		inset 0 1px 0 rgba(255, 255, 255, 0.22),
+		inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+	}
+
+	#monitorToggle:active {
+	  transform: translateY(0);
+	}
+
+	#monitorToggle.panel-open {
+	  width: 40px;
+	  height: 40px;
+	  font-size: 17px;
+	  top: 14px;
+	  right: min(840px, 96vw);
+	  margin-right: 10px;
+	  border-radius: 12px;
+	}
+
+    #monitorPanel {
+	  position: fixed;
+	  top: 0;
+	  right: 0;
+	  width: min(840px, 96vw);
+	  max-width: 96vw;
+	  height: 100%;
+	  background: rgba(10, 10, 14, 0.94);
+	  border-left: 1px solid rgba(255, 255, 255, 0.12);
+	  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.45);
+	  z-index: 40;
+	  transform: translateX(100%);
+	  transition: transform 0.28s ease;
+	  display: flex;
+	  flex-direction: column;
+	  backdrop-filter: blur(10px);
+	}
+
+    #monitorPanel.open {
+      transform: translateX(0);
+    }
+
+    #monitorHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 2;
+    }
+
+    #monitorHeader strong {
+      font-size: 15px;
+      letter-spacing: 0.3px;
+    }
+
+    #monitorClose {
+	  width: 34px;
+	  height: 34px;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  padding: 0;
+
+	  color: #fff;
+	  font-size: 14px;
+	  line-height: 1;
+
+	  background: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 0.14) 0%,
+		rgba(255, 255, 255, 0.06) 100%
+		);
+	  border: 1px solid rgba(255, 255, 255, 0.2);
+	  border-radius: 12px;
+
+	  backdrop-filter: blur(10px);
+	  -webkit-backdrop-filter: blur(10px);
+
+	  box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.14),
+		0 6px 18px rgba(0, 0, 0, 0.22);
+
+	  cursor: pointer;
+	  transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+	}
+
+	#monitorClose:hover {
+	  transform: translateY(-1px);
+	  background: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 0.18) 0%,
+		rgba(255, 255, 255, 0.08) 100%
+	  );
+	  border-color: rgba(255, 255, 255, 0.28);
+	}
+
+    #monitorFrameWrap {
+      flex: 1;
+      min-height: 0;
+      padding: 0;
+    }
+
+    #monitorFrame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #111;
+    }
+
+    @media (max-width: 700px) {
+      #Logo {
+        top: 28%;
+        right: calc(50% - 101px);
+    }
+
+	#monitorToggle {
+		top: 14px;
+		right: 14px;
+		width: 44px;
+		height: 44px;
+		font-size: 20px;
+	}
+	
+	#monitorPanel,
+	#monitorPanel *,
+	#monitorFrame {
+	  cursor: auto !important;
+	}
+	
+	@keyframes monitorGlowPulse {
+	  0% {
+		box-shadow:
+		  0 10px 30px rgba(0, 0, 0, 0.34),
+		  0 0 0 rgba(61, 126, 255, 0);
+	  }
+	  50% {
+		box-shadow:
+		  0 14px 34px rgba(0, 0, 0, 0.38),
+		  0 0 18px rgba(61, 126, 255, 0.6),
+		  0 0 32px rgba(61, 126, 255, 0.35);
+	  }
+	  100% {
+		box-shadow:
+		  0 10px 30px rgba(0, 0, 0, 0.34),
+		  0 0 0 rgba(61, 126, 255, 0);
+	  }
+	}
+
+	#monitorToggle.activity-glow {
+	  animation: monitorGlowPulse 1.6s ease;
+	}
+	
+	@keyframes monitorGlowSlow {
+	0% {
+	box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.34),
+      0 0 0 rgba(61, 126, 255, 0);
+	  }
+	50% {
+	box-shadow:
+	  0 14px 34px rgba(0, 0, 0, 0.38),
+	  0 0 16px rgba(61, 126, 255, 0.45),
+	  0 0 26px rgba(61, 126, 255, 0.22);
+	  }
+	  100% {
+		box-shadow:
+		  0 10px 30px rgba(0, 0, 0, 0.34),
+		  0 0 0 rgba(61, 126, 255, 0);
+	  }
+	}
+
+	@keyframes monitorGlowFast {
+	  0% {
+		box-shadow:
+		  0 10px 30px rgba(0, 0, 0, 0.34),
+		  0 0 0 rgba(61, 126, 255, 0);
+	  }
+	  50% {
+		box-shadow:
+		  0 16px 38px rgba(0, 0, 0, 0.42),
+		  0 0 22px rgba(61, 126, 255, 0.68),
+		  0 0 38px rgba(61, 126, 255, 0.34);
+	  }
+	  100% {
+		box-shadow:
+		  0 10px 30px rgba(0, 0, 0, 0.34),
+		  0 0 0 rgba(61, 126, 255, 0);
+	  }
+	}
+
+	#monitorToggle.activity-glow-slow {
+	  animation: monitorGlowSlow 2.6s ease-in-out infinite;
+	}
+
+	#monitorToggle.activity-glow-fast {
+	  animation: monitorGlowFast 1.15s ease-in-out infinite;
+	}
+	
+    }
+  </style>
+  <link rel="icon" type="image/png" href="https://assets.hails.cc/assets/favicon.png">
+</head>
+<body>
+
+<!-- Cursor -->
+<img src="https://assets.hails.cc/i/think.gif" id="hailsCursor" alt="Animated Cursor" />
+
+<script>
+  document.addEventListener('mousemove', function(e) {
+    const gifCursor = document.getElementById('hailsCursor');
+    gifCursor.style.left = e.pageX + 'px';
+    gifCursor.style.top = e.pageY + 'px';
+  });
+</script>
+
+<div id="particles-js"></div>
+<script src="https://assets.hails.cc/particlejs/particles.js"></script>
+<script src="https://assets.hails.cc/particlejs/script.js"></script>
+
+<div id="Logo" align="center">
+  <script type="text/javascript">
+    const imageBasePath = "https://assets.hails.cc/assets/";
+    const images = ['logo_ani.gif', 'logo.png', 'logo2.png', 'logo3.png'];
+    const targetUrl = 'https://links.hails.cc/';
+
+    function getRandomImage() {
+      const index = Math.floor(Math.random() * images.length);
+      return images[index];
+    }
+
+    function getRandomBackground() {
+      const bgImages = [
+        'https://assets.hails.cc/i/bg1.jpg',
+        'https://assets.hails.cc/i/bg2_transFlag.jpg',
+        'https://assets.hails.cc/i/bg3_paintIt.png'
+      ];
+      return bgImages[Math.floor(Math.random() * bgImages.length)];
+    }
+
+    window.onload = function() {
+      const img = document.createElement('img');
+      img.src = imageBasePath + getRandomImage();
+      img.width = 202;
+      img.height = 202;
+      img.onclick = function() {
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      };
+      document.getElementById('Logo').appendChild(img);
+
+      const bg = getRandomBackground();
+      document.body.style.backgroundImage = `url('${bg}')`;
+    };
+  </script>
+</div>
+
+<button id="monitorToggle" type="button" aria-label="Open monitor" title="Open monitor">📊</button>
+
+<div id="monitorPanel" aria-hidden="true">
+  <div id="monitorHeader">
+    <strong>hails.cc</strong>
+    <button id="monitorClose" type="button" aria-label="Close monitor" title="Close monitor">❌</button>
+  </div>
+  <div id="monitorFrameWrap">
+    <iframe
+      id="monitorFrame"
+      src="monitor_login.php"
+      title="Avatar Monitor"
+      loading="lazy"
+      referrerpolicy="same-origin">
+    </iframe>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const toggle = document.getElementById('monitorToggle');
+    const panel = document.getElementById('monitorPanel');
+    const closeBtn = document.getElementById('monitorClose');
+
+	const gifCursor = document.getElementById('hailsCursor');
+	const monitorPanel = document.getElementById('monitorPanel');
+	const monitorFrame = document.getElementById('monitorFrame');
+
+	document.addEventListener('mousemove', function (e) {
+	  gifCursor.style.left = e.pageX + 'px';
+	  gifCursor.style.top = e.pageY + 'px';
+	});
+
+	function hideCustomCursor() {
+	  gifCursor.style.display = 'none';
+	}
+
+	function showCustomCursor() {
+	  gifCursor.style.display = 'block';
+	}
+
+	if (monitorPanel) {
+	  monitorPanel.addEventListener('mouseenter', hideCustomCursor);
+	  monitorPanel.addEventListener('mouseleave', showCustomCursor);
+	}
+
+	if (monitorFrame) {
+	  monitorFrame.addEventListener('mouseenter', hideCustomCursor);
+	  monitorFrame.addEventListener('mouseleave', showCustomCursor);
+	}
+
+
+	function openPanel() {
+	  panel.classList.add('open');
+	  panel.setAttribute('aria-hidden', 'false');
+	  toggle.classList.add('panel-open');
+	  toggle.classList.remove('activity-glow-slow', 'activity-glow-fast');
+	}
+
+	function closePanel() {
+	  panel.classList.remove('open');
+	  panel.setAttribute('aria-hidden', 'true');
+	  toggle.classList.remove('panel-open');
+	}
+
+    toggle.addEventListener('click', function () {
+      if (panel.classList.contains('open')) {
+        closePanel();
+      } else {
+        openPanel();
+      }
+    });
+
+    closeBtn.addEventListener('click', closePanel);
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        closePanel();
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>

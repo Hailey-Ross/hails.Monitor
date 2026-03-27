@@ -14,6 +14,16 @@ This project has evolved significantly from earlier versions and now includes:
 
 <img width="1920" height="964" alt="web-ui-preview" src="https://github.com/user-attachments/assets/c5088f59-13de-459a-bc9e-cf7273419558" />
 
+### 📊 Compression Stats  
+*Prior to this update, my database had ballooned to around 1.2~1.3 GiB. After running the compression cronjob, the entire database is now down to 7.8 MiB*
+
+<img width="1570" height="498" alt="compression stats" src="https://github.com/user-attachments/assets/7bec3883-7154-4353-a721-3f551f677893" />
+
+### 💽 Table Size Breakdown
+*Here is the breakdown of each tables size after the compression was run.*
+
+<img width="270" height="270" alt="db-size-breakdown" src="https://github.com/user-attachments/assets/7af6a56e-0110-4950-85c6-64dba45cf6c2" />
+
 ---
 
 ## 📦 What You'll Need:
@@ -253,6 +263,9 @@ Supports:
   - `compression_state`
   - session growth
 - Clean old logs if needed
+- You will need to Optimize the change_logs table
+  - This does NOT need to be run daily, perhaps weekly
+    - `OPTIMIZE TABLE change_log;`
 
 ---
 

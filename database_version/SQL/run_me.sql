@@ -1,6 +1,7 @@
 CREATE DATABASE IF NOT EXISTS `hailsmonitor` 
 USE `hailsmonitor`;
 
+
 CREATE TABLE IF NOT EXISTS `avatar_sessions` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `avatar_key` char(36) NOT NULL,
@@ -18,7 +19,7 @@ CREATE TABLE IF NOT EXISTS `avatar_sessions` (
   KEY `idx_visit_start` (`visit_start`),
   KEY `idx_source_range` (`source_first_change_log_id`,`source_last_change_log_id`),
   KEY `idx_avatar_region` (`avatar_key`,`region_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=9570 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=10277 DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `avatar_visits` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -33,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `avatar_visits` (
   KEY `idx_avatar_visits_last_seen_desc` (`last_seen`),
   KEY `idx_avatar_visits_last_seen` (`last_seen`),
   KEY `idx_avatar_visits_region_lastseen` (`region_name`,`last_seen`)
-) ENGINE=MyISAM AUTO_INCREMENT=9284 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=9576 DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `change_log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -48,8 +49,7 @@ CREATE TABLE IF NOT EXISTS `change_log` (
   KEY `idx_change_log_tbl_op_time` (`table_name`,`operation`,`change_time`),
   KEY `idx_change_log_region_avatar_time` (`region_name_gc`,`avatar_key_gc`,`change_time`),
   KEY `idx_change_log_tbl_op_id` (`table_name`,`operation`,`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2613913 DEFAULT CHARSET=utf8;
-
+) ENGINE=MyISAM AUTO_INCREMENT=2677677 DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `compression_state` (
   `job_name` varchar(100) NOT NULL,
@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS `compression_state` (
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`job_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 CREATE TABLE IF NOT EXISTS `monitor_user_regions` (
   `user_id` int(10) unsigned NOT NULL,
@@ -80,7 +81,20 @@ CREATE TABLE IF NOT EXISTS `monitor_users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_monitor_username` (`username`),
   KEY `idx_monitor_active` (`is_active`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `region_scanners` (
+  `region_name` varchar(255) NOT NULL,
+  `scanner_key` varchar(36) NOT NULL,
+  `owner_key` varchar(36) DEFAULT NULL,
+  `object_name` varchar(255) DEFAULT NULL,
+  `started_at` datetime NOT NULL,
+  `last_checkin` datetime NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`region_name`),
+  KEY `idx_scanner_key` (`scanner_key`),
+  KEY `idx_last_checkin` (`last_checkin`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
 DELIMITER //

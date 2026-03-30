@@ -3,8 +3,8 @@ integer RESTART_INTERVAL = 72000;
 
 list SCRIPTS_TO_RESET = [
     "hails.Monitor",
-    "hails.rgb+light",
-    "hails.blink"
+    "Script B",
+    "Script C"
 ];
 
 integer startTime;

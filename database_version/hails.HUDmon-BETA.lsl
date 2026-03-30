@@ -12,8 +12,8 @@ integer max_avatar_count = 250; // Maximum number of visitors to output
 integer batch_size = 20; // Number of avatars to send in each batch
 
 // Database Connection strings
-string server_url = "https://mon.hails.cc/hails.php"; // Secure HTTPS URL
-string API_KEY = "Clx2Kgy1WXPiRsL6OJ6I830OTwS"; // API Key for server communication
+string server_url = "https://YOUR-SITE-HERE.tld/av.php"; // Secure HTTPS URL
+string API_KEY = "YOUR-API-KEY-HERE"; // API Key for server communication
 
 // DO NOT TOUCH BELOW HERE
 list avatar_list = [];        // For database operations

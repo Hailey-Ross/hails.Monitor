@@ -16,7 +16,7 @@ string texture_uuid = "b18295e3-facb-0a25-61ae-d0b49073ea65"; // Set texture UUI
 
 // Database Connection strings
 string server_url = "https://YOUR-SITE-URL-HERE.tld/av.php"; // Secure HTTPS URL
-string API_KEY = "YOU-API-KEY-HERE"; // API Key for server communication
+string API_KEY = "YOUR-API-KEY-HERE"; // API Key for server communication
 
 // DO NOT TOUCH BELOW HERE
 list avatar_list = [];        // For database operations

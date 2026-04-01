@@ -5,24 +5,19 @@
 // Scans the entire sim, stores avatars with detection timestamps and region
 // Say "hails info" in public chat for Command List
 
-list allowed_users = ["11111111-2222-3333-4444-555555555555"]; // Who else can check the visitor list? UUID's only
+list allowed_users = ["0fc458f0-50c4-4d6f-95a6-965be6e977ad"]; // Who else can check the visitor list? UUID's only
 integer scan_interval = 12; // How often to scan
 integer command_channel = 2; // IM Toggle command channel
 integer max_avatar_count = 250; // Maximum number of visitors to output
 integer batch_size = 20; // Number of avatars to send in each batch
-
-// Texture UUID
-string texture_uuid = "b18295e3-facb-0a25-61ae-d0b49073ea65"; // Set texture UUID
 
 // Database Connection strings
 string server_url = "https://YOUR-SITE-URL-HERE.tld/av.php"; // Secure HTTPS URL
 string API_KEY = "YOUR-API-KEY-HERE"; // API Key for server communication
 
 // DO NOT TOUCH BELOW HERE
-list avatar_list = [];        // For database operations
+list avatar_list = [];
 integer total_visitor_count = 0;
-string scanner_name = "hails.Monitor";
-float last_notification_time = 0.0;
 integer waiting_for_response = FALSE;
 integer debug_enabled = FALSE;
 integer im_notifications_enabled = FALSE;
@@ -35,6 +30,12 @@ integer last_heartbeat_sent = 0;
 
 string scanner_key = "";
 string active_region = "";
+string scanner_name = "hails.HUDMonitor";
+
+float last_notification_time = 0.0;
+
+// Texture UUID
+string texture_uuid = "b18295e3-facb-0a25-61ae-d0b49073ea65"; // Set texture UUID
 
 debug(string message) {
     if (debug_enabled) {
@@ -53,14 +54,19 @@ checkInRegion() {
         "&owner_key=" + llEscapeURL((string)llGetOwner()) +
         "&object_name=" + llEscapeURL(llGetObjectName()) +
         "&timeout_seconds=" + (string)scanner_timeout;
+        
+    string censored_post_data =
+        "api_key=CENSORED-API-KEY" +
+        "&action=scanner_release" +
+        "&region_name=" + llEscapeURL(active_region) +
+        "&scanner_key=" + llEscapeURL(scanner_key);
 
     debug("Sending scanner check-in for region: " + active_region);
+    debug("Sending check-in request to server with data: " + censored_post_data);
 
     llHTTPRequest(
         server_url,
-        [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],
-        post_data
-    );
+        [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],post_data);
 }
 
 releaseRegion() {
@@ -73,14 +79,17 @@ releaseRegion() {
         "&action=scanner_release" +
         "&region_name=" + llEscapeURL(active_region) +
         "&scanner_key=" + llEscapeURL(scanner_key);
+        
+    string censored_post_data =
+        "api_key=CENSORED-API-KEY" +
+        "&action=scanner_release" +
+        "&region_name=" + llEscapeURL(active_region) +
+        "&scanner_key=" + llEscapeURL(scanner_key);
 
     debug("Releasing scanner lock for region: " + active_region);
+    debug("Sending release request to server with data: " + censored_post_data);
 
-    llHTTPRequest(
-        server_url,
-        [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],
-        post_data
-    );
+    llHTTPRequest(server_url,[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],post_data);
 }
 
 sendBatchToServer() {
@@ -94,11 +103,7 @@ sendBatchToServer() {
     debug("Sending batch to server with data: " + censored_post_data);
 
     waiting_for_response = TRUE;
-    llHTTPRequest(
-        server_url,
-        [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],
-        post_data
-    );
+    llHTTPRequest(server_url,[HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],post_data);
 
     avatar_list = [];
 }
@@ -129,7 +134,6 @@ default {
     }
 
     state_entry() {
-        scanner_name = "hails.Monitor";
         scanner_key = (string)llGetKey();
         active_region = llGetRegionName();
         scanner_active = FALSE;

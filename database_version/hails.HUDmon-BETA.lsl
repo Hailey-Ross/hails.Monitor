@@ -5,147 +5,215 @@
 // Scans the entire sim, stores avatars with detection timestamps and region
 // Say "hails info" in public chat for Command List
 
-list allowed_users = ["0fc458f0-50c4-4d6f-95a6-965be6e977ad"]; // Who else can check the visitor list? UUID's only
+list allowed_users = ["11111111-2222-3333-4444-555555555555"]; // Who else can check the visitor list? UUID's only
 integer scan_interval = 12; // How often to scan
 integer command_channel = 2; // IM Toggle command channel
 integer max_avatar_count = 250; // Maximum number of visitors to output
 integer batch_size = 20; // Number of avatars to send in each batch
 
+// Texture UUID
+string texture_uuid = "b18295e3-facb-0a25-61ae-d0b49073ea65"; // Set texture UUID
+
 // Database Connection strings
-string server_url = "https://YOUR-SITE-HERE.tld/av.php"; // Secure HTTPS URL
-string API_KEY = "YOUR-API-KEY-HERE"; // API Key for server communication
+string server_url = "https://YOUR-SITE-URL-HERE.tld/av.php"; // Secure HTTPS URL
+string API_KEY = "YOU-API-KEY-HERE"; // API Key for server communication
 
 // DO NOT TOUCH BELOW HERE
 list avatar_list = [];        // For database operations
-integer total_visitor_count = 0; 
-string scanner_name = "hails.Monitor"; 
-float last_notification_time = 0.0; 
+integer total_visitor_count = 0;
+string scanner_name = "hails.Monitor";
+float last_notification_time = 0.0;
 integer waiting_for_response = FALSE;
 integer debug_enabled = FALSE;
 integer im_notifications_enabled = FALSE;
 integer notification_cooldown = 60;
-integer standby_mode = FALSE; // Standby mode flag
 
-// Texture UUID
-string texture_uuid = "b18295e3-facb-0a25-61ae-d0b49073ea65"; // Set texture UUID
+integer scanner_active = FALSE;
+integer heartbeat_interval = 30;
+integer scanner_timeout = 90;
+integer last_heartbeat_sent = 0;
 
-// Debug function to handle whether to output or not
+string scanner_key = "";
+string active_region = "";
+
 debug(string message) {
     if (debug_enabled) {
         llOwnerSay(message);
     }
 }
 
-// Function to send avatar data in batches to the server
-sendBatchToServer() {
-    string post_data = "api_key=" + API_KEY + "&action=store_batch&data=" + llDumpList2String(avatar_list, ",");
-    string censored_post_data = "api_key=CENSORED_API_KEY&action=store_batch&data=" + llDumpList2String(avatar_list, ",");
-    debug("Sending batch to server with data: " + censored_post_data);
-    llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
-    // Clear the avatar_list after sending to maintain the recent visitors
-    avatar_list = []; 
+checkInRegion() {
+    active_region = llGetRegionName();
+
+    string post_data =
+        "api_key=" + llEscapeURL(API_KEY) +
+        "&action=scanner_checkin" +
+        "&region_name=" + llEscapeURL(active_region) +
+        "&scanner_key=" + llEscapeURL(scanner_key) +
+        "&owner_key=" + llEscapeURL((string)llGetOwner()) +
+        "&object_name=" + llEscapeURL(llGetObjectName()) +
+        "&timeout_seconds=" + (string)scanner_timeout;
+
+    debug("Sending scanner check-in for region: " + active_region);
+
+    llHTTPRequest(
+        server_url,
+        [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],
+        post_data
+    );
 }
 
-// Function to check if in standby mode based on the region
-checkStandbyMode() {
-    string region_name = llGetRegionName();
-    if (region_name == "Lettuce Spray" || region_name == "Lil G" || region_name == "Nuku Iva") { //|| region_name == "Region"
-        standby_mode = TRUE;
-        debug("Standby mode enabled in region: " + region_name); // Debugging only
-        llSetColor(<1.0, 0.0, 0.5>, ALL_SIDES); // Set color to black
-    } else {
-        standby_mode = FALSE;
-        debug("Standby mode disabled in region: " + region_name); // Debugging only
-        llSetColor(<1.0, 1.0, 1.0>, ALL_SIDES); // Set color to white
+releaseRegion() {
+    if (active_region == "" || scanner_key == "") {
+        return;
     }
+
+    string post_data =
+        "api_key=" + llEscapeURL(API_KEY) +
+        "&action=scanner_release" +
+        "&region_name=" + llEscapeURL(active_region) +
+        "&scanner_key=" + llEscapeURL(scanner_key);
+
+    debug("Releasing scanner lock for region: " + active_region);
+
+    llHTTPRequest(
+        server_url,
+        [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],
+        post_data
+    );
+}
+
+sendBatchToServer() {
+    if (llGetListLength(avatar_list) == 0) {
+        return;
+    }
+
+    string post_data = "api_key=" + llEscapeURL(API_KEY) + "&action=store_batch&data=" + llEscapeURL(llDumpList2String(avatar_list, ","));
+    string censored_post_data = "api_key=CENSORED_API_KEY&action=store_batch&data=" + llDumpList2String(avatar_list, ",");
+
+    debug("Sending batch to server with data: " + censored_post_data);
+
+    waiting_for_response = TRUE;
+    llHTTPRequest(
+        server_url,
+        [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"],
+        post_data
+    );
+
+    avatar_list = [];
 }
 
 default {
-    on_rez(integer start_param) { llResetScript(); }
+    on_rez(integer start_param) {
+        llResetScript();
+    }
+
+    attach(key id) {
+        if (id == NULL_KEY) {
+            releaseRegion();
+        }
+    }
+
     changed(integer change) {
-        if (change & (CHANGED_OWNER | CHANGED_INVENTORY | CHANGED_REGION)) {
-            llOwnerSay(scanner_name + " has detected a change. \nRebooting..");
-            llResetScript(); } }
+        if (change & CHANGED_REGION) {
+            releaseRegion();
+            llOwnerSay(scanner_name + " has detected a region change.\nRebooting..");
+            llResetScript();
+        }
+
+        if (change & (CHANGED_OWNER | CHANGED_INVENTORY)) {
+            releaseRegion();
+            llOwnerSay(scanner_name + " has detected a change.\nRebooting..");
+            llResetScript();
+        }
+    }
+
     state_entry() {
         scanner_name = "hails.Monitor";
-        llSetTexture(texture_uuid, ALL_SIDES); // Set the object's texture
-        checkStandbyMode(); // Check if the script should be in standby mode
+        scanner_key = (string)llGetKey();
+        active_region = llGetRegionName();
+        scanner_active = FALSE;
+        last_heartbeat_sent = 0;
+        avatar_list = [];
+        total_visitor_count = 0;
+
+        llSetTexture(texture_uuid, ALL_SIDES);
+        llSetColor(<1.0, 0.0, 0.5>, ALL_SIDES);
+
+        llOwnerSay(scanner_name + " starting in region: " + active_region);
+        checkInRegion();
+
         if (im_notifications_enabled) {
-            llOwnerSay(scanner_name + " is online. \nIM notifications are enabled.");
+            llOwnerSay(scanner_name + " is online.\nIM notifications are enabled.");
         } else {
-            llOwnerSay(scanner_name + " is online. \nIM notifications are disabled.");
+            llOwnerSay(scanner_name + " is online.\nIM notifications are disabled.");
         }
-        llSetTimerEvent(scan_interval);
+
+        llSetTimerEvent((float)scan_interval);
         llListen(0, "", llGetOwner(), "");
         llListen(command_channel, "", llGetOwner(), "");
     }
 
     timer() {
-        checkStandbyMode(); // Check standby mode on each timer event
+        integer now = llGetUnixTime();
 
-        if (standby_mode) {
-            return; // Exit if in standby mode
+        if ((now - last_heartbeat_sent) >= heartbeat_interval) {
+            last_heartbeat_sent = now;
+            checkInRegion();
         }
+
+        if (!scanner_active) {
+            debug("Scanner is inactive in this region. Skipping scan.");
+            llSetColor(<1.0, 0.0, 0.5>, ALL_SIDES);
+            return;
+        }
+
+        llSetColor(<1.0, 1.0, 1.0>, ALL_SIDES);
 
         list agents = llGetAgentList(AGENT_LIST_REGION, []);
         integer count = llGetListLength(agents);
-        string region_name = llGetRegionName(); // Restored region name functionality
+        string region_name = llGetRegionName();
 
-        debug("Timer event fired. Number of agents detected: " + (string)count); // Debugging
+        debug("Timer event fired. Number of agents detected: " + (string)count);
 
         if (count == 0) {
-            llWhisper(0, "No avatars detected in the region.");
-        } else {
-            integer i; // Declare i here
-            for (i = 0; i < count; i++) { // Loop syntax corrected
-                key avatar_key = llList2Key(agents, i);
-                string avatar_name = llKey2Name(avatar_key);
-                string date = llGetDate();
-                float pacific_time = llGetWallclock();
-                float utc_time = pacific_time + (7 * 3600);
+            return;
+        }
 
-                // Clean up the timestamps before sending to the database
-                string first_seen = llDeleteSubString(llGetTimestamp(), -4, -1);
-                string last_seen = llDeleteSubString(llGetTimestamp(), -4, -1);
+        integer i;
+        for (i = 0; i < count; i++) {
+            key avatar_key = llList2Key(agents, i);
+            string avatar_name = llKey2Name(avatar_key);
 
-                integer hours = (integer)utc_time / 3600;
-                integer minutes = ((integer)utc_time % 3600) / 60;
-                integer seconds = (integer)utc_time % 60;
+            string first_seen = llDeleteSubString(llGetTimestamp(), -4, -1);
+            string last_seen = llDeleteSubString(llGetTimestamp(), -4, -1);
 
-                string formatted_time = (string)hours + ":" + (string)minutes + ":" + (string)seconds;
-                string detection_time = date + " " + formatted_time; // Removed "UTC" to prevent the error
+            integer index = llListFindList(avatar_list, [avatar_name, (string)avatar_key]);
+            debug("Avatar detected: " + avatar_name + ", UUID: " + (string)avatar_key + ", Index: " + (string)index);
 
-                // Check if the avatar is already in the avatar_list
-                integer index = llListFindList(avatar_list, [avatar_name, (string)avatar_key]);
-                debug("Avatar detected: " + avatar_name + ", UUID: " + (string)avatar_key + ", Index: " + (string)index); // Debugging
+            if (index == -1) {
+                avatar_list += [avatar_name, (string)avatar_key, region_name, first_seen, last_seen];
+                total_visitor_count++;
 
-                if (index == -1) {
-                    // Avatar is new, add it to the avatar_list
-                    avatar_list += [avatar_name, (string)avatar_key, region_name, first_seen, last_seen];
-                    total_visitor_count++; // Increment only when a new visitor is added
+                if (llGetListLength(avatar_list) >= batch_size * 5) {
+                    sendBatchToServer();
+                }
 
-                    if (llGetListLength(avatar_list) >= batch_size * 5) {
-                        sendBatchToServer(); // Send batch if the limit is reached
-                    }
+                if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
+                    llInstantMessage(llGetOwner(), "New Visitor detected: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
+                    last_notification_time = llGetTime();
+                }
+            } else {
+                avatar_list = llListReplaceList(avatar_list, [last_seen], index + 4, index + 4);
+                debug("Updated last seen time for: " + avatar_name);
 
-                    if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
-                        llInstantMessage(llGetOwner(), "New Visitor detected: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
-                        last_notification_time = llGetTime();
-                    }
-                } else {
-                    // Avatar exists, update the last seen time in the avatar_list
-                    avatar_list = llListReplaceList(avatar_list, [detection_time], index + 3, index + 3);
-                    debug("Updated last seen time for: " + avatar_name); // Debugging
-                    // Notify that the visitor was updated
-                    if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
-                        llInstantMessage(llGetOwner(), "Visitor updated: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
-                        last_notification_time = llGetTime();
-                    }
+                if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
+                    llInstantMessage(llGetOwner(), "Visitor updated: " + avatar_name + " (UUID: " + (string)avatar_key + ")");
+                    last_notification_time = llGetTime();
                 }
             }
         }
 
-        // Send any remaining avatars after the timer event
         if (llGetListLength(avatar_list) > 0) {
             sendBatchToServer();
         }
@@ -170,20 +238,19 @@ default {
                     llOwnerSay("Debugging is now disabled.");
                 }
             }
-        } else if (channel == 0 && (id == llGetOwner() || llListFindList(allowed_users, [id]) != -1)) {
+        } else if (channel == 0 && (id == llGetOwner() || llListFindList(allowed_users, [(string)id]) != -1)) {
             if (message == "hails reset") {
-                avatar_list = []; // Clear the avatar list
-                total_visitor_count = 0; // Reset visitor count
+                avatar_list = [];
+                total_visitor_count = 0;
+                releaseRegion();
                 llInstantMessage(id, "Rebooting " + scanner_name + "..");
                 llResetScript();
             } else if (message == "hails info") {
                 llInstantMessage(id,
                     scanner_name + " Commands:\n" +
                     "• 'hails reset' - Resets the script.\n" +
-                    "• '/"
-                    + (string)command_channel + " toggle im' - (Owner Only) Toggles IM notifications for new avatar detection.\n" +
-                    "• '/"
-                    + (string)command_channel + " toggle debug' - (Owner Only) Toggles debugging output."
+                    "• '/" + (string)command_channel + " toggle im' - (Owner Only) Toggles IM notifications for new avatar detection.\n" +
+                    "• '/" + (string)command_channel + " toggle debug' - (Owner Only) Toggles debugging output."
                 );
             }
         } else {
@@ -192,14 +259,31 @@ default {
     }
 
     http_response(key request_id, integer status, list metadata, string body) {
-        // Handle the server's response for avatar queries
-        debug("HTTP Response Status: " + (string)status); // Debug: Show HTTP status
+        debug("HTTP Response Status: " + (string)status);
+        debug("Server response: " + body);
 
-        if (status == 200) {
-            debug("Server response: " + body);  // Debug: Show the server response
-        } else {
-            debug("Error fetching avatar data from the server. Status: " + (string)status);  // Debug: Show error status
+        if (status != 200) {
+            debug("Error fetching avatar data from the server. Status: " + (string)status);
+            waiting_for_response = FALSE;
+            return;
         }
-        waiting_for_response = FALSE; // Allow future requests after receiving a response
+
+        string lower_body = llToLower(body);
+
+        if (llSubStringIndex(lower_body, "\"is_active\":1") != -1) {
+            if (!scanner_active) {
+                scanner_active = TRUE;
+                llOwnerSay(scanner_name + " is now ACTIVE in region " + active_region + ".");
+            }
+            llSetColor(<1.0, 1.0, 1.0>, ALL_SIDES);
+        } else if (llSubStringIndex(lower_body, "\"is_active\":0") != -1) {
+            if (scanner_active) {
+                llOwnerSay(scanner_name + " is now INACTIVE in region " + active_region + " because another scanner is active.");
+            }
+            scanner_active = FALSE;
+            llSetColor(<1.0, 0.0, 0.5>, ALL_SIDES);
+        }
+
+        waiting_for_response = FALSE;
     }
 }

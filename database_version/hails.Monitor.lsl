@@ -286,18 +286,20 @@ default {
         string lower_body = llToLower(body);
     
         if (llSubStringIndex(lower_body, "\"action\":\"scanner_checkin\"") != -1) {
-            // optional if you later add action to response
+            // optional if you wish to add actions to response
         }
     
         if (llSubStringIndex(lower_body, "\"is_active\":1") != -1) {
             if (!scanner_active) {
                 scanner_active = TRUE;
                 llOwnerSay(scanner_name + " is now ACTIVE in region " + active_region + ".");
+                llSetObjectDesc("" + active_region + " Server");
             }
         } else if (llSubStringIndex(lower_body, "\"is_active\":0") != -1) {
             if (scanner_active) {
                 scanner_active = FALSE;
                 llOwnerSay(scanner_name + " is now INACTIVE in region " + active_region + " because another scanner is active.");
+                llSetObjectDesc("Not currently activated in this Sim.");
             } else {
                 scanner_active = FALSE;
             }

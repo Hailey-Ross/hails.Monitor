@@ -33,6 +33,7 @@ This is the **core setup script**. It creates the entire database structure, inc
   - `compression_state` – Tracks progress of compression jobs
   - `monitor_users` – Stores application users
   - `monitor_user_regions` – Maps users to regions they can access
+  - `region_scanners` - Tracks active scanner and their region
 - Adds indexes for performance optimization
 - Creates **triggers** on `avatar_visits`:
   - Automatically logs all INSERT, UPDATE, and DELETE operations into `change_log`
@@ -42,7 +43,7 @@ This is the **core setup script**. It creates the entire database structure, inc
 - ✅ First-time setup (required)
 - ✅ Rebuilding the database from scratch
 
-**Do not skip this step.** All other scripts depend on these tables and triggers existing.
+**Do not skip this step.** All other scripts in this directory demand that these tables and triggers exist.
 
 ---
 

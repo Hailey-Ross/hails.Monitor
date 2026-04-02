@@ -17,7 +17,7 @@ string API_KEY = "YOUR-API-KEY-HERE"; // API Key for server communication
 // DO NOT TOUCH BELOW HERE
 list avatar_list = [];         // Active avatars currently detected in-region only: [uuid, name, first_seen, last_seen]
 list avatar_keys = [];         // UUID-only lookup list matching avatar_list rows
-string scanner_name; 
+string scanner_name = "hails.Monitor";
 float last_notification_time = 0.0; 
 integer waiting_for_response = FALSE;
 integer debug_enabled = FALSE;

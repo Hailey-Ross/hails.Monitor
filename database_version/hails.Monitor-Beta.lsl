@@ -286,14 +286,13 @@ default {
     
         string lower_body = llToLower(body);
     
-        if (llSubStringIndex(lower_body, "\"action\":\"scanner_checkin\"") != -1) {
-            // optional if you later add action to response
-        }
-    
+        // Only scanner_checkin responses should control scanner_active.
+        // Batch store responses like {"success":"Batch update completed successfully"}
+        // do not include is_active and must not flip the scanner inactive.
         if (llSubStringIndex(lower_body, "\"is_active\":1") != -1) {
             if (notify_active) {
                 llOwnerSay(scanner_name + " is now ACTIVE in region " + active_region + ".");
-                llSetObjectDesc("" + active_region + " Server");
+                llSetObjectDesc(active_region + " Server");
             }
             scanner_active = TRUE;
             notify_active = FALSE;
@@ -304,10 +303,14 @@ default {
             }
             scanner_active = FALSE;
             notify_active = FALSE;
+        } else if (llSubStringIndex(lower_body, "batch update completed successfully") != -1) {
+            // Expected store_batch response. Leave scanner_active unchanged.
+        } else if (llSubStringIndex(lower_body, "scanner_release") != -1) {
+            // Ignore release acknowledgements for state flips here.
         } else {
-            scanner_active = FALSE;
-            notify_active = FALSE;
-            }
+            debug("No scanner status in response; leaving current active state unchanged.");
+        }
+    
         waiting_for_response = FALSE;
     }
 }

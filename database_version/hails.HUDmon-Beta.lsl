@@ -1,5 +1,5 @@
 // Script Created by Hailey Enfield
-// Site: https://u.hails.cc/Links
+// Site: https://hails.cc/links
 // Github: https://github.com/Hailey-Ross/hails.Monitor
 // PLEASE LEAVE ALL CREDITS/COMMENTS INTACT
 // Scans the entire sim, stores avatars with detection timestamps and region
@@ -314,7 +314,7 @@ default {
                 llOwnerSay(scanner_name + " is now ACTIVE in region " + active_region + ".");
                 llSetObjectDesc("" + active_region + " Server");
             }
-            llSetColor(<1.0, 0.0, 0.5>, ALL_SIDES);
+            llSetColor(<0.0, 0.0, 0.0>, ALL_SIDES);
             notify_active = FALSE;
             scanner_active = TRUE;
         } else if (llSubStringIndex(lower_body, "\"is_active\":0") != -1) {
@@ -322,13 +322,13 @@ default {
                 llOwnerSay(scanner_name + " is now INACTIVE in region " + active_region + ", due to another scanner already being active.");
                 llSetObjectDesc("Not currently activated in this Sim.");
             }
-            llSetColor(<1.0, 1.0, 1.0>, ALL_SIDES);
+            llSetColor(<1.0, 0.0, 0.5>, ALL_SIDES);
             notify_active = FALSE;
             scanner_active = FALSE;
         } else {
             scanner_active = FALSE;
             notify_active = FALSE;
-            llSetColor(<1.0, 1.0, 1.0>, ALL_SIDES);;
+            llSetColor(<1.0, 0.0, 0.5>, ALL_SIDES);;
             }
         waiting_for_response = FALSE;
     }

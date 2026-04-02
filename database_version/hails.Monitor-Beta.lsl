@@ -31,7 +31,6 @@ string active_region = "";
 string scanner_name = "hails.Monitor-Beta v0.0.9a";
 string prim_name = "hails.Monitor";
 
-// Debug function to handle whether to output or not
 debug(string message) {
     if (debug_enabled) {
         llOwnerSay(message);
@@ -178,7 +177,6 @@ default {
         integer i;
         string now_ts = llDeleteSubString(llGetTimestamp(), -4, -1);
 
-        // Remove avatars who have left
         integer list_count = llGetListLength(avatar_list);
         for (i = list_count - 4; i >= 0; i -= 4) {
             string stored_uuid = llList2String(avatar_list, i);
@@ -188,7 +186,6 @@ default {
             }
         }
 
-        // Add new avatars and update last_seen for avatars still present
         for (i = 0; i < count; i++) {
             key avatar_key = llList2Key(agents, i);
             string avatar_uuid = (string)avatar_key;
@@ -286,9 +283,6 @@ default {
     
         string lower_body = llToLower(body);
     
-        // Only scanner_checkin responses should control scanner_active.
-        // Batch store responses like {"success":"Batch update completed successfully"}
-        // do not include is_active and must not flip the scanner inactive.
         if (llSubStringIndex(lower_body, "\"is_active\":1") != -1) {
             if (notify_active) {
                 llOwnerSay(scanner_name + " is now ACTIVE in region " + active_region + ".");
@@ -304,9 +298,7 @@ default {
             scanner_active = FALSE;
             notify_active = FALSE;
         } else if (llSubStringIndex(lower_body, "batch update completed successfully") != -1) {
-            // Expected store_batch response. Leave scanner_active unchanged.
         } else if (llSubStringIndex(lower_body, "scanner_release") != -1) {
-            // Ignore release acknowledgements for state flips here.
         } else {
             debug("No scanner status in response; leaving current active state unchanged.");
         }

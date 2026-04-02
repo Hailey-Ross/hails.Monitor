@@ -1,3 +1,5 @@
+// This is used during beta/alpha testing, it should NOT be necessary when production builds are in place.
+
 // === CONFIG === //
 integer RESTART_INTERVAL = 72000; 
 

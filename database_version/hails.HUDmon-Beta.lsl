@@ -294,42 +294,41 @@ default {
         }
     }
 
-    http_response(key request_id, integer status, list metadata, string body) {
+   http_response(key request_id, integer status, list metadata, string body) {
         debug("HTTP Response Status: " + (string)status);
         debug("Server response: " + body);
     
         if (status != 200) {
             debug("HTTP request failed.");
+            waiting_for_response = FALSE;
             return;
         }
     
         string lower_body = llToLower(body);
     
-        if (llSubStringIndex(lower_body, "\"action\":\"scanner_checkin\"") != -1) {
-            // optional if you later add action to response
-        }
-    
         if (llSubStringIndex(lower_body, "\"is_active\":1") != -1) {
             if (notify_active) {
                 llOwnerSay(scanner_name + " is now ACTIVE in region " + active_region + ".");
-                llSetObjectDesc("" + active_region + " Server");
+                llSetObjectDesc(active_region + " Server");
             }
-            llSetColor(<0.0, 0.0, 0.0>, ALL_SIDES);
-            notify_active = FALSE;
+            llSetColor(<1.0, 1.0, 1.0>, ALL_SIDES);
             scanner_active = TRUE;
+            notify_active = FALSE;
         } else if (llSubStringIndex(lower_body, "\"is_active\":0") != -1) {
             if (notify_active) {
                 llOwnerSay(scanner_name + " is now INACTIVE in region " + active_region + ", due to another scanner already being active.");
                 llSetObjectDesc("Not currently activated in this Sim.");
             }
             llSetColor(<1.0, 0.0, 0.5>, ALL_SIDES);
-            notify_active = FALSE;
             scanner_active = FALSE;
+            notify_active = FALSE;
+        } else if (llSubStringIndex(lower_body, "batch update completed successfully") != -1) {
+            // Normal store_batch response. Do not change scanner_active or color.
+        } else if (llSubStringIndex(lower_body, "scanner_release") != -1) {
+            // Release acknowledgement. Do not change scanner_active or color here.
         } else {
-            scanner_active = FALSE;
-            notify_active = FALSE;
-            llSetColor(<1.0, 0.0, 0.5>, ALL_SIDES);;
-            }
+            debug("No scanner status in response; leaving current active state unchanged.");
+        }
         waiting_for_response = FALSE;
     }
 }

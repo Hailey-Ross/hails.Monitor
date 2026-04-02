@@ -89,6 +89,8 @@ Includes:
 - `avatar_sessions` (compressed sessions)
 - `monitor_users` (auth system)
 - `monitor_user_regions` (permissions)
+- `region_scanners` (active scanner connected)
+- `compression_state` (stores last compressed rows/date/time)
 
 ---
 

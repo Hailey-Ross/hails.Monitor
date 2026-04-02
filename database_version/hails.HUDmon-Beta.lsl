@@ -9,23 +9,6 @@ list allowed_users = ["11111111-2222-3333-4444-555555555555","aaaaaaaa-bbbb-cccc
 integer scan_interval = 12; // How often to scan
 integer command_channel = 2; // IM Toggle command channel
 integer max_avatar_count = 250; // Maximum number of visitors to output
-integer batch_size = 22; // Number of avatars to send in each batch
-
-// Database Connection strings
-string server_url = "https://YOUR-SITE-URL-HERE.tld/av.php"; // Secure HTTPS URL
-string API_KEY = "YOUR-API-KEY-HERE"; // API Key for server communication
-
-// Script Created by Hailey Enfield
-// Site: https://u.hails.cc/Links
-// Github: https://github.com/Hailey-Ross/hails.Monitor
-// PLEASE LEAVE ALL CREDITS/COMMENTS INTACT
-// Scans the entire sim, stores avatars with detection timestamps and region
-// Say "hails info" in public chat for Command List
-
-list allowed_users = ["11111111-2222-3333-4444-555555555555","aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"]; // Who else can check the visitor list? UUID's only
-integer scan_interval = 12; // How often to scan
-integer command_channel = 2; // IM Toggle command channel
-integer max_avatar_count = 250; // Maximum number of visitors to output
 integer batch_size = 25; // Number of avatars to send in each batch
 
 // Database Connection strings
@@ -33,7 +16,7 @@ string server_url = "https://YOUR-SITE-URL-HERE.tld/av.php"; // Secure HTTPS URL
 string API_KEY = "YOUR-API-KEY-HERE"; // API Key for server communication
 
 // DO NOT TOUCH BELOW HERE
-list avatar_list = []; // Active avatars currently in-region only: [uuid, name, first_seen, last_seen]
+list avatar_list = [];        // Active avatars currently in-region only: [uuid, name, first_seen, last_seen]
 integer total_visitor_count = 0; 
 string scanner_name = "hails.HUDMonitor-Beta v0.0.4b";
 string prim_name = "hails.HUDMonitor"; 
@@ -153,7 +136,6 @@ default {
             llSetObjectName(prim_name);
             active_region = llGetRegionName();
             scanner_active = FALSE;
-            notify_active = TRUE;
             llOwnerSay(scanner_name + " has detected a region change. Rebooting..");
             llResetScript();
         }
@@ -161,7 +143,6 @@ default {
         if (change & (CHANGED_OWNER | CHANGED_INVENTORY)) {
             avatar_list = [];
             releaseRegion();
-            notify_active = TRUE;
             llSetObjectName(prim_name);
             llOwnerSay(scanner_name + " has detected a change. Rebooting..");
             llResetScript();
@@ -329,21 +310,26 @@ default {
         }
     
         if (llSubStringIndex(lower_body, "\"is_active\":1") != -1) {
-            if (!scanner_active) {
-                scanner_active = TRUE;
+            if (notify_active) {
                 llOwnerSay(scanner_name + " is now ACTIVE in region " + active_region + ".");
                 llSetObjectDesc("" + active_region + " Server");
             }
+            llSetColor(<1.0, 0.0, 0.5>, ALL_SIDES);
+            notify_active = FALSE;
+            scanner_active = TRUE;
         } else if (llSubStringIndex(lower_body, "\"is_active\":0") != -1) {
-            if (scanner_active) {
-                scanner_active = FALSE;
+            if (notify_active) {
                 llOwnerSay(scanner_name + " is now INACTIVE in region " + active_region + ", due to another scanner already being active.");
                 llSetObjectDesc("Not currently activated in this Sim.");
+            }
+            llSetColor(<1.0, 1.0, 1.0>, ALL_SIDES);
+            notify_active = FALSE;
+            scanner_active = FALSE;
         } else {
             scanner_active = FALSE;
-            notify_active = TRUE;
+            notify_active = FALSE;
+            llSetColor(<1.0, 1.0, 1.0>, ALL_SIDES);;
             }
-        }
         waiting_for_response = FALSE;
     }
 }

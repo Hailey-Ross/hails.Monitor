@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS `hailsmonitor`;
+CREATE DATABASE IF NOT EXISTS `hailsmonitor` /*!40100 DEFAULT CHARACTER SET utf8 */;
 USE `hailsmonitor`;
 
 CREATE TABLE IF NOT EXISTS `avatar_sessions` (
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `avatar_sessions` (
   KEY `idx_visit_start` (`visit_start`),
   KEY `idx_source_range` (`source_first_change_log_id`,`source_last_change_log_id`),
   KEY `idx_avatar_region` (`avatar_key`,`region_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=11093 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=11536 DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `avatar_visits` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -27,13 +27,14 @@ CREATE TABLE IF NOT EXISTS `avatar_visits` (
   `region_name` varchar(255) DEFAULT NULL,
   `first_seen` datetime DEFAULT NULL,
   `last_seen` datetime DEFAULT NULL,
+  `last_name_verified_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `avatar_key` (`avatar_key`),
   KEY `avatar_key_2` (`avatar_key`),
   KEY `idx_avatar_visits_last_seen_desc` (`last_seen`),
   KEY `idx_avatar_visits_last_seen` (`last_seen`),
   KEY `idx_avatar_visits_region_lastseen` (`region_name`,`last_seen`)
-) ENGINE=MyISAM AUTO_INCREMENT=9810 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=9883 DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `change_log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -48,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `change_log` (
   KEY `idx_change_log_tbl_op_time` (`table_name`,`operation`,`change_time`),
   KEY `idx_change_log_region_avatar_time` (`region_name_gc`,`avatar_key_gc`,`change_time`),
   KEY `idx_change_log_tbl_op_id` (`table_name`,`operation`,`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2861836 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=2886991 DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `compression_state` (
   `job_name` varchar(100) NOT NULL,

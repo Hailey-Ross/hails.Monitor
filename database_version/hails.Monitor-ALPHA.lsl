@@ -16,8 +16,6 @@ string API_KEY = "YOUR-API-KEY-HERE"; // API Key for server communication
 
 // DO NOT TOUCH BELOW HERE
 list avatar_list = [];         // Active avatars currently detected in-region only: [uuid, name, first_seen, last_seen]
-list avatar_keys = [];         // UUID-only lookup list matching avatar_list rows
-string scanner_name = "hails.Monitor";
 float last_notification_time = 0.0; 
 integer waiting_for_response = FALSE;
 integer debug_enabled = FALSE;
@@ -29,6 +27,7 @@ integer scanner_timeout = 90;        // must be greater than heartbeat_interval
 integer last_heartbeat_sent = 0;
 string scanner_key = "";
 string active_region = "";
+string scanner_name = "hails.Monitor";
 
 // Debug function to handle whether to output or not
 debug(string message) {
@@ -46,7 +45,6 @@ sendBatchToServer() {
     integer count = llGetListLength(avatar_list);
     integer i;
     string post_prefix = "api_key=" + API_KEY + "&action=store_batch&data=";
-    string censor_prefix = "api_key=abc_CENSORED_xyz&action=store_batch&data=";
     string region_name = llGetRegionName();
 
     list batch = [];
@@ -63,8 +61,7 @@ sendBatchToServer() {
 
         if (batch_avatar_count >= batch_size) {
             string post_data = post_prefix + llDumpList2String(batch, ",");
-            string censor_post_data = censor_prefix + llDumpList2String(batch, ",");
-            debug("Sending batch to server with data: " + censor_post_data);
+            debug("Sending batch to server. Avatar count: " + (string)batch_avatar_count);
             llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
             batch = [];
             batch_avatar_count = 0;
@@ -73,8 +70,7 @@ sendBatchToServer() {
 
     if (llGetListLength(batch) > 0) {
         string post_data = post_prefix + llDumpList2String(batch, ",");
-        string censor_post_data = censor_prefix + llDumpList2String(batch, ",");
-        debug("Sending batch to server with data: " + censor_post_data);
+        debug("Sending batch to server. Avatar count: " + (string)batch_avatar_count);
         llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
     }
 }
@@ -141,7 +137,6 @@ default {
             releaseRegion();
 
             avatar_list = [];
-            avatar_keys = [];
 
             active_region = llGetRegionName();
             scanner_active = FALSE;
@@ -174,21 +169,14 @@ default {
 
         integer i;
         string now_ts = llDeleteSubString(llGetTimestamp(), -4, -1);
-        list current_agent_uuids = [];
-
-        for (i = 0; i < count; i++) {
-            current_agent_uuids += [(string)llList2Key(agents, i)];
-        }
 
         // Remove avatars who have left
-        integer key_count = llGetListLength(avatar_keys);
-        for (i = key_count - 1; i >= 0; i--) {
-            string stored_uuid = llList2String(avatar_keys, i);
+        integer list_count = llGetListLength(avatar_list);
+        for (i = list_count - 4; i >= 0; i -= 4) {
+            string stored_uuid = llList2String(avatar_list, i);
 
-            if (llListFindList(current_agent_uuids, [stored_uuid]) == -1) {
-                integer row_start = i * 4;
-                avatar_keys = llDeleteSubList(avatar_keys, i, i);
-                avatar_list = llDeleteSubList(avatar_list, row_start, row_start + 3);
+            if (llListFindList(agents, [(key)stored_uuid]) == -1) {
+                avatar_list = llDeleteSubList(avatar_list, i, i + 3);
             }
         }
 
@@ -196,14 +184,30 @@ default {
         for (i = 0; i < count; i++) {
             key avatar_key = llList2Key(agents, i);
             string avatar_uuid = (string)avatar_key;
+            integer row_start = -1;
+            integer j;
+            integer current_count = llGetListLength(avatar_list);
 
-            integer index = llListFindList(avatar_keys, [avatar_uuid]);
-            debug("Avatar detected: UUID: " + avatar_uuid + ", Index: " + (string)index);
+            for (j = 0; j < current_count; j += 4) {
+                if (llList2String(avatar_list, j) == avatar_uuid) {
+                    row_start = j;
+                    j = current_count;
+                }
+            }
 
-            if (index == -1) {
+            integer debug_index;
+
+            if (row_start == -1) {
+                debug_index = -1;
+            } else {
+                debug_index = row_start / 4;
+            }
+            
+            // debug("Avatar detected: UUID: " + avatar_uuid + ", Index: " + (string)debug_index);
+
+            if (row_start == -1) {
                 string avatar_name = llKey2Name(avatar_key);
 
-                avatar_keys += [avatar_uuid];
                 avatar_list += [avatar_uuid, avatar_name, now_ts, now_ts];
 
                 if (im_notifications_enabled && (llGetTime() - last_notification_time) > notification_cooldown) {
@@ -211,7 +215,6 @@ default {
                     last_notification_time = llGetTime();
                 }
             } else {
-                integer row_start = index * 4;
                 string avatar_name = llList2String(avatar_list, row_start + 1);
                 avatar_list = llListReplaceList(avatar_list, [now_ts], row_start + 3, row_start + 3);
 
@@ -247,7 +250,6 @@ default {
         } else if (channel == 0 && (id == llGetOwner() || llListFindList(allowed_users, [id]) != -1)) {
             if (message == "hails reset") {
                 avatar_list = [];
-                avatar_keys = [];
                 llInstantMessage(id, "Rebooting " + scanner_name + "..");
                 llResetScript();
             } else if (message == "hails info") {

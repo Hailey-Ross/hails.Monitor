@@ -9,7 +9,7 @@ list allowed_users = ["11111111-2222-3333-4444-555555555555","aaaaaaaa-bbbb-cccc
 integer scan_interval = 12; // How often to scan
 integer command_channel = 2; // IM Toggle command channel
 integer max_avatar_count = 250; // Maximum number of visitors to output
-integer batch_size = 25; // Number of avatars to send in each batch
+integer batch_size = 22; // Number of avatars to send in each batch
 
 // Database Connection strings
 string server_url = "https://YOUR-SITE-URL-HERE.tld/av.php"; // Secure HTTPS URL
@@ -104,8 +104,7 @@ sendBatchToServer() {
 
         if (batch_avatar_count >= batch_size) {
             string post_data = post_prefix + llDumpList2String(batch, ",");
-            string censored_post_data = censored_prefix + llDumpList2String(batch, ",");
-            debug("Sending batch to server with data: " + censored_post_data);
+            debug("Sending batch to server. Avatar count: " + (string)batch_avatar_count);
             llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
             batch = [];
             batch_avatar_count = 0;
@@ -114,8 +113,7 @@ sendBatchToServer() {
 
     if (llGetListLength(batch) > 0) {
         string post_data = post_prefix + llDumpList2String(batch, ",");
-        string censored_post_data = censored_prefix + llDumpList2String(batch, ",");
-        debug("Sending batch to server with data: " + censored_post_data);
+        debug("Sending batch to server. Avatar count: " + (string)batch_avatar_count);
         llHTTPRequest(server_url, [HTTP_METHOD, "POST", HTTP_MIMETYPE, "application/x-www-form-urlencoded"], post_data);
     }
 }
@@ -224,7 +222,7 @@ default {
                 debug_index = row_start / 4;
             }
             
-            debug("Avatar detected: UUID: " + avatar_uuid + ", Index: " + (string)debug_index);
+            //debug("Avatar detected: UUID: " + avatar_uuid + ", Index: " + (string)debug_index);
 
             if (row_start == -1) {
                 string avatar_name = llKey2Name(avatar_key);

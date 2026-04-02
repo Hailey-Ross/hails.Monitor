@@ -3,7 +3,7 @@ list allowed_users = ["00000000-0000-0000-0000-000000000000", "00000000-0000-000
 string server_url = "https://YOUR-SITE-HERE.tld/avCron.php";
 string API_KEY = "YOUR-API-KEY";
 integer update_interval = 7200; // Interval between checks (2 hours)
-integer debug_enabled = TRUE;
+integer debug_enabled = FALSE; // Toggle debug with commands so it doesn't annoy you on restarts.
 integer command_channel = 3;
 list pending_keys;
 string current_avatar_key;

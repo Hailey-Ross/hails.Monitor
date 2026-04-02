@@ -13,7 +13,7 @@ if (!isset($_SESSION['monitor_logged_in']) || $_SESSION['monitor_logged_in'] !==
 }
 
 define('ALLOW_CONFIG_INCLUDE', true);
-require_once '/path/to/your/hosted/config.php';
+require_once '/PATH/TO/YOUR/SECURE/config.php';
 
 function db(): PDO
 {
@@ -42,10 +42,10 @@ function safeTimezone(string $timezone): string
 function timezoneOptions(): array
 {
     $preferred = [
-        'America/Denver',
-        'America/New_York',
+		'America/New_York',
         'America/Chicago',
         'America/Los_Angeles',
+		'America/Denver',
         'America/Phoenix',
         'America/Anchorage',
         'Pacific/Honolulu',
@@ -140,6 +140,27 @@ function normalizeRegionList(string $raw): array
 function isValidRole(string $role): bool
 {
     return in_array($role, ['user', 'moderator', 'superadmin'], true);
+}
+
+function getAssignedRegions(PDO $pdo, int $userId): array
+{
+    $stmt = $pdo->prepare("\n        SELECT region_name\n        FROM monitor_user_regions\n        WHERE user_id = :user_id\n        ORDER BY region_name ASC\n    ");
+    $stmt->execute([':user_id' => $userId]);
+
+    return array_values(array_filter(array_map(
+        static fn(array $row): string => trim((string)($row['region_name'] ?? '')),
+        $stmt->fetchAll()
+    )));
+}
+
+function getAllRegionOptions(PDO $pdo): array
+{
+    $stmt = $pdo->query("\n        SELECT region_name\n        FROM (\n            SELECT DISTINCT region_name\n            FROM avatar_sessions\n            WHERE region_name IS NOT NULL AND region_name <> ''\n\n            UNION\n\n            SELECT DISTINCT region_name\n            FROM monitor_user_regions\n            WHERE region_name IS NOT NULL AND region_name <> ''\n\n            UNION\n\n            SELECT DISTINCT region_name\n            FROM region_scanners\n            WHERE region_name IS NOT NULL AND region_name <> ''\n        ) region_options\n        ORDER BY region_name ASC\n    ");
+
+    return array_values(array_filter(array_map(
+        static fn(array $row): string => trim((string)($row['region_name'] ?? '')),
+        $stmt->fetchAll()
+    )));
 }
 
 function getDashboardRows(PDO $pdo, int $monitorUserId, bool $canViewAll, string $regionFilterRaw): array
@@ -292,7 +313,7 @@ function renderDashboardData(array $rows, string $timezone): string
 $monitorUserId = (int)($_SESSION['monitor_user_id'] ?? 0);
 $monitorUsername = (string)($_SESSION['monitor_username'] ?? '');
 $displayName = (string)($_SESSION['monitor_display_name'] ?? $_SESSION['monitor_username'] ?? 'User');
-$timezone = safeTimezone((string)($_SESSION['monitor_timezone'] ?? 'America/Denver'));
+$timezone = safeTimezone((string)($_SESSION['monitor_timezone'] ?? 'America/Los_Angeles'));
 $canViewAll = !empty($_SESSION['monitor_can_view_all']);
 $role = (string)($_SESSION['monitor_role'] ?? 'user');
 $regionFilterRaw = trim((string)($_SESSION['monitor_region_filter'] ?? ''));
@@ -316,7 +337,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string)($_POST['action'] ?? '');
 
     if ($action === 'update_display_settings') {
-        $requestedTimezone = safeTimezone((string)($_POST['timezone'] ?? 'America/Denver'));
+        $requestedTimezone = safeTimezone((string)($_POST['timezone'] ?? 'America/Los_Angeles'));
         $requestedRegionFilter = trim((string)($_POST['region_filter'] ?? ''));
 
         try {
@@ -347,7 +368,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newUsername = trim((string)($_POST['new_username'] ?? ''));
         $newPassword = (string)($_POST['new_password'] ?? '');
         $newDisplayName = trim((string)($_POST['new_display_name'] ?? ''));
-        $newTimezone = safeTimezone((string)($_POST['new_timezone'] ?? 'America/Denver'));
+        $newTimezone = safeTimezone((string)($_POST['new_timezone'] ?? 'America/Los_Angeles'));
         $newCanViewAll = isset($_POST['new_can_view_all']) ? 1 : 0;
         $newIsActive = isset($_POST['new_is_active']) ? 1 : 0;
         $newRegionsRaw = trim((string)($_POST['new_regions'] ?? ''));
@@ -453,7 +474,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $editUserId = (int)($_POST['edit_user_id'] ?? 0);
         $editUsername = trim((string)($_POST['edit_username'] ?? ''));
         $editDisplayName = trim((string)($_POST['edit_display_name'] ?? ''));
-        $editTimezone = safeTimezone((string)($_POST['edit_timezone'] ?? 'America/Denver'));
+        $editTimezone = safeTimezone((string)($_POST['edit_timezone'] ?? 'America/Los_Angeles'));
         $editCanViewAll = isset($_POST['edit_can_view_all']) ? 1 : 0;
         $editIsActive = isset($_POST['edit_is_active']) ? 1 : 0;
         $editRegionsRaw = trim((string)($_POST['edit_regions'] ?? ''));
@@ -719,6 +740,14 @@ if ($isSuperAdmin || $isModerator) {
 
 $rows = getDashboardRows($pdo, $monitorUserId, $canViewAll, $regionFilterRaw);
 $dashboardDataHtml = renderDashboardData($rows, $timezone);
+$assignedRegions = getAssignedRegions($pdo, $monitorUserId);
+$regionOptions = $canViewAll ? getAllRegionOptions($pdo) : $assignedRegions;
+$defaultStatsRegion = '';
+if ($canViewAll) {
+    $defaultStatsRegion = '';
+} elseif (count($assignedRegions) === 1) {
+    $defaultStatsRegion = $assignedRegions[0];
+}
 
 $openPanel = '';
 if ($settingsMessage !== '' || $settingsError !== '') {
@@ -727,6 +756,8 @@ if ($settingsMessage !== '' || $settingsError !== '') {
     $openPanel = 'create-user';
 } elseif ($userUpdateMessage !== '' || $userUpdateError !== '' || $userDeleteMessage !== '' || $userDeleteError !== '') {
     $openPanel = 'manage-users';
+} elseif ($defaultStatsRegion !== '') {
+    $openPanel = 'stats';
 }
 ?>
 <!DOCTYPE html>
@@ -1172,6 +1203,86 @@ if ($settingsMessage !== '' || $settingsError !== '') {
 			}
 		}
 
+
+
+        .stats-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 620px;
+        }
+
+        .stats-picker-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .stats-picker-row .form-group {
+            flex: 1 1 280px;
+        }
+
+        .stats-picker-row button {
+            width: fit-content;
+            padding: 10px 16px;
+            border: 0;
+            border-radius: 6px;
+            background: #3d7eff;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .stats-selection-heading {
+            margin-bottom: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #d8e6ff;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 12px;
+        }
+
+        .stats-card {
+            background: #151b21;
+            border: 1px solid #2d3742;
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .stats-card-title {
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .stats-metric-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .stats-metric-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .stats-metric-label {
+            color: #b5bcc4;
+        }
+
+        .stats-metric-value {
+            font-weight: bold;
+            color: #eef2f5;
+        }
+
+        .stats-results {
+            margin-top: 16px;
+        }
+
         .empty {
             padding: 20px;
             color: #c8d0d7;
@@ -1202,6 +1313,11 @@ if ($settingsMessage !== '' || $settingsError !== '') {
 
     <div class="quick-actions">
         <span class="tooltip-wrap">
+            <button type="button" class="icon-toggle" data-panel="stats" aria-label="Region Stats">📊</button>
+            <span class="tooltip-text">Region Stats</span>
+        </span>
+
+        <span class="tooltip-wrap">
             <button type="button" class="icon-toggle" data-panel="settings" aria-label="Display Settings">⚙️</button>
             <span class="tooltip-text">Display Settings</span>
         </span>
@@ -1217,6 +1333,62 @@ if ($settingsMessage !== '' || $settingsError !== '') {
                 <span class="tooltip-text">Manage Users</span>
             </span>
         <?php endif; ?>
+    </div>
+
+    <div id="panel-stats" class="panel">
+        <div class="panel-title">Region Stats</div>
+
+        <div class="stats-controls">
+            <?php if ($canViewAll): ?>
+                <div class="form-group">
+                    <label for="stats-region-search">Region Picker</label>
+                    <div class="stats-picker-row">
+                        <div class="form-group">
+                            <input
+                                type="text"
+                                id="stats-region-search"
+                                list="stats-region-options"
+                                placeholder="Start typing a region name"
+                                value=""
+                                autocomplete="off"
+                            >
+                            <datalist id="stats-region-options">
+                                <?php foreach ($regionOptions as $regionOption): ?>
+                                    <option value="<?= htmlspecialchars($regionOption, ENT_QUOTES, 'UTF-8') ?>"></option>
+                                <?php endforeach; ?>
+                            </datalist>
+                        </div>
+                        <button type="button" id="stats-load-button">Load Stats</button>
+                    </div>
+                </div>
+                <div class="settings-note">Start typing and choose a region from the filtered list.</div>
+            <?php else: ?>
+                <div class="form-group">
+                    <label for="stats-region-select">Assigned Region<?= count($assignedRegions) > 1 ? 's' : '' ?></label>
+                    <?php if (count($assignedRegions) > 1): ?>
+                        <select id="stats-region-select">
+                            <option value="">Choose a region</option>
+                            <?php foreach ($assignedRegions as $assignedRegion): ?>
+                                <option value="<?= htmlspecialchars($assignedRegion, ENT_QUOTES, 'UTF-8') ?>">
+                                    <?= htmlspecialchars($assignedRegion, ENT_QUOTES, 'UTF-8') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php else: ?>
+                        <input type="text" id="stats-region-select" value="<?= htmlspecialchars($defaultStatsRegion, ENT_QUOTES, 'UTF-8') ?>" readonly>
+                    <?php endif; ?>
+                </div>
+                <div class="settings-note">Stats access is limited to the region assignments on your account.</div>
+            <?php endif; ?>
+        </div>
+
+        <div id="stats-results" class="stats-results">
+            <?php if (!$canViewAll && $defaultStatsRegion !== ''): ?>
+                <div class="empty">Loading stats for <?= htmlspecialchars($defaultStatsRegion, ENT_QUOTES, 'UTF-8') ?>...</div>
+            <?php else: ?>
+                <div class="empty"><?= $canViewAll ? 'Choose a region to view stats.' : 'Choose one of your assigned regions to view stats.' ?></div>
+            <?php endif; ?>
+        </div>
     </div>
 
     <div id="panel-settings" class="panel">
@@ -1287,7 +1459,7 @@ if ($settingsMessage !== '' || $settingsError !== '') {
                     <label for="new_timezone">Timezone</label>
                     <select id="new_timezone" name="new_timezone">
                         <?php foreach ($timezoneOptions as $timezoneOption): ?>
-                            <option value="<?= htmlspecialchars($timezoneOption, ENT_QUOTES, 'UTF-8') ?>" <?= $timezoneOption === 'America/Denver' ? 'selected' : '' ?>>
+                            <option value="<?= htmlspecialchars($timezoneOption, ENT_QUOTES, 'UTF-8') ?>" <?= $timezoneOption === 'America/Los_Angeles' ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($timezoneOption, ENT_QUOTES, 'UTF-8') ?>
                             </option>
                         <?php endforeach; ?>
@@ -1362,7 +1534,7 @@ if ($settingsMessage !== '' || $settingsError !== '') {
                         $managedUserId = (int)$managedUser['id'];
                         $managedUserUsername = (string)$managedUser['username'];
                         $managedUserRegions = (string)($managedUser['regions'] ?? '');
-                        $managedUserTimezone = safeTimezone((string)($managedUser['timezone'] ?? 'America/Denver'));
+                        $managedUserTimezone = safeTimezone((string)($managedUser['timezone'] ?? 'America/Los_Angeles'));
                         $managedUserDisplayName = (string)($managedUser['display_name'] ?? $managedUserUsername);
                         $managedUserCanViewAll = ((int)$managedUser['can_view_all'] === 1);
                         $managedUserIsActive = ((int)$managedUser['is_active'] === 1);
@@ -1560,7 +1732,15 @@ if ($settingsMessage !== '' || $settingsError !== '') {
             const refreshStatus = document.getElementById('refresh-status');
             const toggleButtons = Array.from(document.querySelectorAll('.icon-toggle'));
 			const lastUpdatedIndicator = document.getElementById('last-updated');
+
+            const statsResults = document.getElementById('stats-results');
+            const statsLoadButton = document.getElementById('stats-load-button');
+            const statsRegionSearch = document.getElementById('stats-region-search');
+            const statsRegionSelect = document.getElementById('stats-region-select');
+            const statsDefaultRegion = <?= json_encode($defaultStatsRegion, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+            let statsRequestInFlight = false;
             const panels = {
+                stats: document.getElementById('panel-stats'),
                 settings: document.getElementById('panel-settings'),
                 'create-user': document.getElementById('panel-create-user'),
                 'manage-users': document.getElementById('panel-manage-users')
@@ -1577,6 +1757,59 @@ if ($settingsMessage !== '' || $settingsError !== '') {
             let isRefreshPaused = false;
 			let lastUpdatedAt = Date.now();
 			let lastUpdatedTimerId = null;
+
+
+
+            function getSelectedStatsRegion() {
+                if (statsRegionSearch) {
+                    return statsRegionSearch.value.trim();
+                }
+
+                if (statsRegionSelect) {
+                    return statsRegionSelect.value.trim();
+                }
+
+                return '';
+            }
+
+            async function loadStats(regionName, showError = true) {
+                if (!statsResults || statsRequestInFlight) {
+                    return;
+                }
+
+                const trimmedRegion = (regionName || '').trim();
+
+                if (!trimmedRegion) {
+                    statsResults.innerHTML = '<div class="empty">Choose a region to view stats.</div>';
+                    return;
+                }
+
+                statsRequestInFlight = true;
+                statsResults.innerHTML = '<div class="empty">Loading stats...</div>';
+
+                try {
+                    const response = await fetch('monitor_stats.php?region=' + encodeURIComponent(trimmedRegion) + '&_=' + Date.now(), {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        cache: 'no-store'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Stats request failed.');
+                    }
+
+                    statsResults.innerHTML = await response.text();
+                } catch (error) {
+                    if (showError) {
+                        statsResults.innerHTML = '<div class="empty">Unable to load region stats right now.</div>';
+                    }
+                } finally {
+                    statsRequestInFlight = false;
+                }
+            }
 
             function applyPanelState() {
                 toggleButtons.forEach((button) => {
@@ -1899,6 +2132,38 @@ if ($settingsMessage !== '' || $settingsError !== '') {
                 });
             }
 
+
+            if (statsLoadButton) {
+                statsLoadButton.addEventListener('click', function () {
+                    loadStats(getSelectedStatsRegion(), true);
+                });
+            }
+
+            if (statsRegionSearch) {
+                statsRegionSearch.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        loadStats(getSelectedStatsRegion(), true);
+                    }
+                });
+
+                statsRegionSearch.addEventListener('change', function () {
+                    if (statsRegionSearch.value.trim() !== '') {
+                        loadStats(getSelectedStatsRegion(), false);
+                    }
+                });
+            }
+
+            if (statsRegionSelect && statsRegionSelect.tagName === 'SELECT') {
+                statsRegionSelect.addEventListener('change', function () {
+                    if (statsRegionSelect.value.trim() !== '') {
+                        loadStats(getSelectedStatsRegion(), true);
+                    } else if (statsResults) {
+                        statsResults.innerHTML = '<div class="empty">Choose one of your assigned regions to view stats.</div>';
+                    }
+                });
+            }
+
             document.addEventListener('visibilitychange', function () {
                 if (!document.hidden && !isRefreshPaused) {
                     refreshDashboardData(false);
@@ -1912,6 +2177,13 @@ if ($settingsMessage !== '' || $settingsError !== '') {
 			updateRefreshUI();
 			markUpdatedNow();
 			startLastUpdatedTimer();
+
+            if (statsDefaultRegion) {
+                if (statsRegionSelect && statsRegionSelect.tagName === 'INPUT') {
+                    statsRegionSelect.value = statsDefaultRegion;
+                }
+                loadStats(statsDefaultRegion, false);
+            }
 
             try {
                 if (window.parent && window.parent !== window) {

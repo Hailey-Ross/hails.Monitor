@@ -22,12 +22,14 @@ integer debug_enabled = FALSE;
 integer im_notifications_enabled = FALSE;
 integer notification_cooldown = 60;
 integer scanner_active = FALSE;
+integer notify_active = TRUE;
 integer heartbeat_interval = 30;     // seconds
 integer scanner_timeout = 90;        // must be greater than heartbeat_interval
 integer last_heartbeat_sent = 0;
 string scanner_key = "";
 string active_region = "";
-string scanner_name = "hails.Monitor";
+string scanner_name = "hails.Monitor-Beta v0.0.9a";
+string prim_name = "hails.Monitor";
 
 // Debug function to handle whether to output or not
 debug(string message) {
@@ -118,7 +120,9 @@ default {
         scanner_key = (string)llGetKey();
         active_region = llGetRegionName();
         scanner_active = FALSE;
+        notify_active = TRUE;
         last_heartbeat_sent = 0;
+        llSetObjectName(prim_name);
     
         llOwnerSay(scanner_name + " starting in region: " + active_region);
         checkInRegion();
@@ -129,6 +133,7 @@ default {
     }
 
     on_rez(integer start_param) {
+        llSetObjectName(prim_name);
         llResetScript();
     }
     
@@ -137,14 +142,19 @@ default {
             releaseRegion();
 
             avatar_list = [];
+            last_heartbeat_sent = 0;
+            scanner_key = "";
+            llSetObjectName(prim_name);
 
             active_region = llGetRegionName();
             scanner_active = FALSE;
+            notify_active = TRUE;
             checkInRegion();
         }
 
         if (change & CHANGED_OWNER) {
             releaseRegion();
+            notify_active = TRUE;
             llResetScript();
         }
     }
@@ -293,9 +303,11 @@ default {
                 scanner_active = FALSE;
                 llOwnerSay(scanner_name + " is now INACTIVE in region " + active_region + ", due to another scanner already being active.");
                 llSetObjectDesc("Not currently activated in this Sim.");
-            } else {
-                scanner_active = FALSE;
+        } else {
+            scanner_active = FALSE;
+            notify_active = TRUE;
             }
         }
+        waiting_for_response = FALSE;
     }
 }

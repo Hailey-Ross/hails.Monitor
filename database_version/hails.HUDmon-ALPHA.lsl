@@ -9,7 +9,7 @@ list allowed_users = ["11111111-2222-3333-4444-555555555555","aaaaaaaa-bbbb-cccc
 integer scan_interval = 12; // How often to scan
 integer command_channel = 2; // IM Toggle command channel
 integer max_avatar_count = 250; // Maximum number of visitors to output
-integer batch_size = 20; // Number of avatars to send in each batch
+integer batch_size = 25; // Number of avatars to send in each batch
 
 // Database Connection strings
 string server_url = "https://YOUR-SITE-URL-HERE.tld/av.php"; // Secure HTTPS URL
@@ -17,12 +17,11 @@ string API_KEY = "YOUR-API-KEY-HERE"; // API Key for server communication
 
 // DO NOT TOUCH BELOW HERE
 list avatar_list = [];        // Active avatars currently in-region only: [uuid, name, first_seen, last_seen]
-list avatar_keys = [];        // UUID-only lookup list matching avatar_list rows
 integer total_visitor_count = 0; 
 string scanner_name = "hails.HUDMonitor"; 
 float last_notification_time = 0.0; 
 integer waiting_for_response = FALSE;
-integer debug_enabled = FALSE;
+integer debug_enabled = TRUE;
 integer im_notifications_enabled = FALSE;
 integer notification_cooldown = 60;
 integer scanner_active = FALSE;
@@ -126,14 +125,12 @@ sendBatchToServer() {
 default {
     on_rez(integer start_param) { 
         avatar_list = [];
-        avatar_keys = [];
         llResetScript();
     }
     changed(integer change) {
         if (change & CHANGED_REGION) {
             releaseRegion();
             avatar_list = [];
-            avatar_keys = [];
             total_visitor_count = 0;
             active_region = llGetRegionName();
             scanner_active = FALSE;
@@ -143,7 +140,6 @@ default {
     
         if (change & (CHANGED_OWNER | CHANGED_INVENTORY)) {
             avatar_list = [];
-            avatar_keys = [];
             releaseRegion();
             llOwnerSay(scanner_name + " has detected a change. Rebooting..");
             llResetScript();
@@ -194,21 +190,14 @@ default {
 
         integer i;
         string now_ts = llDeleteSubString(llGetTimestamp(), -4, -1);
-        list current_agent_uuids = [];
-
-        for (i = 0; i < count; i++) {
-            current_agent_uuids += [(string)llList2Key(agents, i)];
-        }
 
         // Remove avatars who have left
-        integer key_count = llGetListLength(avatar_keys);
-        for (i = key_count - 1; i >= 0; i--) {
-            string stored_uuid = llList2String(avatar_keys, i);
+        integer list_count = llGetListLength(avatar_list);
+        for (i = list_count - 4; i >= 0; i -= 4) {
+            string stored_uuid = llList2String(avatar_list, i);
 
-            if (llListFindList(current_agent_uuids, [stored_uuid]) == -1) {
-                integer row_start = i * 4;
-                avatar_keys = llDeleteSubList(avatar_keys, i, i);
-                avatar_list = llDeleteSubList(avatar_list, row_start, row_start + 3);
+            if (llListFindList(agents, [(key)stored_uuid]) == -1) {
+                avatar_list = llDeleteSubList(avatar_list, i, i + 3);
             }
         }
 
@@ -216,14 +205,30 @@ default {
         for (i = 0; i < count; i++) {
             key avatar_key = llList2Key(agents, i);
             string avatar_uuid = (string)avatar_key;
+            integer row_start = -1;
+            integer j;
+            integer current_count = llGetListLength(avatar_list);
 
-            integer index = llListFindList(avatar_keys, [avatar_uuid]);
-            debug("Avatar detected: UUID: " + avatar_uuid + ", Index: " + (string)index);
+            for (j = 0; j < current_count; j += 4) {
+                if (llList2String(avatar_list, j) == avatar_uuid) {
+                    row_start = j;
+                    j = current_count;
+                }
+            }
 
-            if (index == -1) {
+            integer debug_index;
+
+            if (row_start == -1) {
+                debug_index = -1;
+            } else {
+                debug_index = row_start / 4;
+            }
+            
+            debug("Avatar detected: UUID: " + avatar_uuid + ", Index: " + (string)debug_index);
+
+            if (row_start == -1) {
                 string avatar_name = llKey2Name(avatar_key);
 
-                avatar_keys += [avatar_uuid];
                 avatar_list += [avatar_uuid, avatar_name, now_ts, now_ts];
                 total_visitor_count++;
     
@@ -232,7 +237,6 @@ default {
                     last_notification_time = llGetTime();
                 }
             } else {
-                integer row_start = index * 4;
                 string avatar_name = llList2String(avatar_list, row_start + 1);
                 avatar_list = llListReplaceList(avatar_list, [now_ts], row_start + 3, row_start + 3);
     
@@ -268,7 +272,6 @@ default {
         } else if (channel == 0 && (id == llGetOwner() || llListFindList(allowed_users, [id]) != -1)) {
             if (message == "hails reset") {
                 avatar_list = []; // Clear the avatar list
-                avatar_keys = [];
                 total_visitor_count = 0; // Reset visitor count
                 llInstantMessage(id, "Rebooting " + scanner_name + "..");
                 llResetScript();

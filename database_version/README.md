@@ -310,6 +310,10 @@ Supports:
   - `compression_state`
   - session growth
 - Clean old logs if needed
+- Purge regions using SQL Procedure
+  - `CALL purge_region_data('Region Name', 1);` To preview any changes that would be made
+  - `CALL purge_region_data('Region Name', 0);` To actually delete the region
+    - This feature is **NOT** rollback friendly at all.
 - You will need to Optimize the change_logs table
   - This does NOT need to be run daily, perhaps weekly
     - `OPTIMIZE TABLE change_log;`

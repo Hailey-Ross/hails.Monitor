@@ -67,7 +67,6 @@ This system works in multiple stages:
 
 ### 1. Data Collection (LSL Scripts)
 - `hails.Monitor.lsl`
-- `hails.CronServer.lsl`
 - `hails.HUDmon-BETA.lsl`
 
 These send avatar data to your server via API.
@@ -95,7 +94,8 @@ Includes:
 ---
 
 ### 4. Processing Layer (CRON REQUIRED)
-- `hailsDBCompressCron.php` 
+- `hailsDBCompressCron.php` (compresses change_log entries)
+- `hails.CronServer.lsl` (lookup empty names / verify names haven't changed)
 
 This:
 - Converts raw logs into sessions
@@ -117,6 +117,7 @@ Features:
 - Region filtering
 - Live activity tracking
 - Session-based analytics
+- Avatar name verification (lookup users not seen recently to check for name changes)
 
 ---
 
@@ -296,7 +297,8 @@ Supports:
 2. `av.php` → stores raw visits
 3. `change_log` → tracks changes
 4. `hailsDBCompressCron.php` → builds sessions
-5. Dashboard → displays processed data
+5. `hails.CronServer.lsl` → runs Maintenance tasks on the DB
+6. Dashboard → displays processed data
 
 ---
 

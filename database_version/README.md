@@ -259,9 +259,9 @@ INSERT INTO monitor_users (
 
 **What makes this a super admin?**
 
-- \`can_view_all = 1\` → Can view all regions  
-- \`is_active = 1\` → Account is enabled  
-- Must be defined in \`config.php\`  
+- `can_view_all = 1` → Can view all regions  
+- `is_active = 1` → Account is enabled  
+- Must be defined in `config.php`  
 
 ---
 
@@ -269,9 +269,9 @@ INSERT INTO monitor_users (
 
 Navigate to:
 
-\`\`\`text
+```text
 https://yourdomain.com/index.html
-\`\`\`
+```
 
 Log in using the credentials for the user you just created.
 

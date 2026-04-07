@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `avatar_sessions` (
   KEY `idx_visit_start` (`visit_start`),
   KEY `idx_source_range` (`source_first_change_log_id`,`source_last_change_log_id`),
   KEY `idx_avatar_region` (`avatar_key`,`region_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=11536 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=16309 DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `avatar_visits` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `avatar_visits` (
   KEY `idx_avatar_visits_last_seen_desc` (`last_seen`),
   KEY `idx_avatar_visits_last_seen` (`last_seen`),
   KEY `idx_avatar_visits_region_lastseen` (`region_name`,`last_seen`)
-) ENGINE=MyISAM AUTO_INCREMENT=9883 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=10294 DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `change_log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `change_log` (
   KEY `idx_change_log_tbl_op_time` (`table_name`,`operation`,`change_time`),
   KEY `idx_change_log_region_avatar_time` (`region_name_gc`,`avatar_key_gc`,`change_time`),
   KEY `idx_change_log_tbl_op_id` (`table_name`,`operation`,`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2886991 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=3486564 DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `compression_state` (
   `job_name` varchar(100) NOT NULL,
@@ -81,6 +81,72 @@ CREATE TABLE IF NOT EXISTS `monitor_users` (
   UNIQUE KEY `uniq_monitor_username` (`username`),
   KEY `idx_monitor_active` (`is_active`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4;
+
+DELIMITER //
+CREATE PROCEDURE `purge_region_data`(
+    IN p_region_name VARCHAR(255),
+    IN p_preview_only TINYINT(1)
+)
+BEGIN
+    DECLARE v_sessions_count INT DEFAULT 0;
+    DECLARE v_user_regions_count INT DEFAULT 0;
+    DECLARE v_scanners_count INT DEFAULT 0;
+    DECLARE v_change_log_count INT DEFAULT 0;
+
+    IF p_region_name IS NULL OR TRIM(p_region_name) = '' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Region name cannot be null or empty';
+    END IF;
+
+    SELECT COUNT(*) INTO v_sessions_count
+    FROM avatar_sessions
+    WHERE region_name = p_region_name;
+
+    SELECT COUNT(*) INTO v_user_regions_count
+    FROM monitor_user_regions
+    WHERE region_name = p_region_name;
+
+    SELECT COUNT(*) INTO v_scanners_count
+    FROM region_scanners
+    WHERE region_name = p_region_name;
+
+    SELECT COUNT(*) INTO v_change_log_count
+    FROM change_log
+    WHERE JSON_UNQUOTE(JSON_EXTRACT(new_data, '$.region_name')) = p_region_name
+       OR JSON_UNQUOTE(JSON_EXTRACT(old_data, '$.region_name')) = p_region_name;
+
+    IF p_preview_only = 1 THEN
+        SELECT
+            'PREVIEW' AS mode,
+            p_region_name AS region_name,
+            v_sessions_count AS avatar_sessions_rows,
+            v_user_regions_count AS monitor_user_regions_rows,
+            v_scanners_count AS region_scanners_rows,
+            v_change_log_count AS change_log_rows;
+    ELSE
+        DELETE FROM avatar_sessions
+        WHERE region_name = p_region_name;
+
+        DELETE FROM monitor_user_regions
+        WHERE region_name = p_region_name;
+
+        DELETE FROM region_scanners
+        WHERE region_name = p_region_name;
+
+        DELETE FROM change_log
+        WHERE JSON_UNQUOTE(JSON_EXTRACT(new_data, '$.region_name')) = p_region_name
+           OR JSON_UNQUOTE(JSON_EXTRACT(old_data, '$.region_name')) = p_region_name;
+
+        SELECT
+            'DELETED' AS mode,
+            p_region_name AS region_name,
+            v_sessions_count AS avatar_sessions_rows,
+            v_user_regions_count AS monitor_user_regions_rows,
+            v_scanners_count AS region_scanners_rows,
+            v_change_log_count AS change_log_rows;
+    END IF;
+END//
+DELIMITER ;
 
 CREATE TABLE IF NOT EXISTS `region_scanners` (
   `region_name` varchar(255) NOT NULL,

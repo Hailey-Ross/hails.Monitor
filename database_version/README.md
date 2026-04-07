@@ -306,6 +306,11 @@ Supports:
 
 - Monitor log file sizes (`phpcron.txt`)
 - Ensure cron jobs are running
+  - `hails.CronServer.lsl` (every 2 hours)
+    - Checks for blank or NULL value avatar_names
+    - If no empty names are found, checks avatar_names against their UUID in world to compare for name changes
+      - After 90 days of not beeing seen
+      - Previously verified over 150 days ago
 - Periodically verify:
   - `compression_state`
   - session growth

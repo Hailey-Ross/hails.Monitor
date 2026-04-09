@@ -93,8 +93,8 @@ Includes:
 
 ---
 
-### 4. Processing Layer (CRON REQUIRED)
-- `hailsDBCompressCron.php` (compresses change_log entries)
+### 4. Processing Layer 
+- `hailsDBCompressCron.php` (compresses change_log entries) [CRON REQUIRED]
 - `hails.CronServer.lsl` (lookup empty names / verify names haven't changed)
 
 This:

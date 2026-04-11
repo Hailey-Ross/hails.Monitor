@@ -13,7 +13,7 @@ if (!isset($_SESSION['monitor_logged_in']) || $_SESSION['monitor_logged_in'] !==
 }
 
 define('ALLOW_CONFIG_INCLUDE', true);
-require_once '/PATH/TO/YOUR/SECURE/config.php';
+require_once '/usr/www/mtnbound/secure/config.php';
 
 function db(): PDO
 {
@@ -35,17 +35,17 @@ function safeTimezone(string $timezone): string
         new DateTimeZone($timezone);
         return $timezone;
     } catch (Throwable $e) {
-        return 'America/Los_Angeles';
+        return 'America/Denver';
     }
 }
 
 function timezoneOptions(): array
 {
     $preferred = [
-		'America/New_York',
+        'America/Denver',
+        'America/New_York',
         'America/Chicago',
         'America/Los_Angeles',
-		'America/Denver',
         'America/Phoenix',
         'America/Anchorage',
         'Pacific/Honolulu',
@@ -313,7 +313,7 @@ function renderDashboardData(array $rows, string $timezone): string
 $monitorUserId = (int)($_SESSION['monitor_user_id'] ?? 0);
 $monitorUsername = (string)($_SESSION['monitor_username'] ?? '');
 $displayName = (string)($_SESSION['monitor_display_name'] ?? $_SESSION['monitor_username'] ?? 'User');
-$timezone = safeTimezone((string)($_SESSION['monitor_timezone'] ?? 'America/Los_Angeles'));
+$timezone = safeTimezone((string)($_SESSION['monitor_timezone'] ?? 'America/Denver'));
 $canViewAll = !empty($_SESSION['monitor_can_view_all']);
 $role = (string)($_SESSION['monitor_role'] ?? 'user');
 $regionFilterRaw = trim((string)($_SESSION['monitor_region_filter'] ?? ''));
@@ -337,7 +337,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string)($_POST['action'] ?? '');
 
     if ($action === 'update_display_settings') {
-        $requestedTimezone = safeTimezone((string)($_POST['timezone'] ?? 'America/Los_Angeles'));
+        $requestedTimezone = safeTimezone((string)($_POST['timezone'] ?? 'America/Denver'));
         $requestedRegionFilter = trim((string)($_POST['region_filter'] ?? ''));
 
         try {
@@ -368,7 +368,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newUsername = trim((string)($_POST['new_username'] ?? ''));
         $newPassword = (string)($_POST['new_password'] ?? '');
         $newDisplayName = trim((string)($_POST['new_display_name'] ?? ''));
-        $newTimezone = safeTimezone((string)($_POST['new_timezone'] ?? 'America/Los_Angeles'));
+        $newTimezone = safeTimezone((string)($_POST['new_timezone'] ?? 'America/Denver'));
         $newCanViewAll = isset($_POST['new_can_view_all']) ? 1 : 0;
         $newIsActive = isset($_POST['new_is_active']) ? 1 : 0;
         $newRegionsRaw = trim((string)($_POST['new_regions'] ?? ''));
@@ -474,7 +474,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $editUserId = (int)($_POST['edit_user_id'] ?? 0);
         $editUsername = trim((string)($_POST['edit_username'] ?? ''));
         $editDisplayName = trim((string)($_POST['edit_display_name'] ?? ''));
-        $editTimezone = safeTimezone((string)($_POST['edit_timezone'] ?? 'America/Los_Angeles'));
+        $editTimezone = safeTimezone((string)($_POST['edit_timezone'] ?? 'America/Denver'));
         $editCanViewAll = isset($_POST['edit_can_view_all']) ? 1 : 0;
         $editIsActive = isset($_POST['edit_is_active']) ? 1 : 0;
         $editRegionsRaw = trim((string)($_POST['edit_regions'] ?? ''));
@@ -1210,6 +1210,7 @@ if ($settingsMessage !== '' || $settingsError !== '') {
             flex-direction: column;
             gap: 12px;
             max-width: 620px;
+            margin-bottom: 4px;
         }
 
         .stats-picker-row {
@@ -1231,61 +1232,164 @@ if ($settingsMessage !== '' || $settingsError !== '') {
             background: #3d7eff;
             color: #fff;
             cursor: pointer;
+            transition: background 0.18s ease, transform 0.18s ease;
+        }
+
+        .stats-picker-row button:hover {
+            background: #4b89ff;
+            transform: translateY(-1px);
         }
 
         .stats-selection-heading {
-            margin-bottom: 12px;
+            margin: 0 0 14px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.08) 0%,
+                rgba(255, 255, 255, 0.03) 100%
+            );
+            box-shadow:
+                0 10px 24px rgba(0, 0, 0, 0.18),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
             font-size: 18px;
             font-weight: bold;
-            color: #d8e6ff;
+            color: #f4f7fb;
+            letter-spacing: 0.2px;
+        }
+
+        .stats-section-title {
+            margin: 20px 0 10px;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: #9fc6ff;
         }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 14px;
+            margin-bottom: 14px;
         }
 
         .stats-card {
-            background: #151b21;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(
+                180deg,
+                rgba(24, 31, 40, 0.98) 0%,
+                rgba(16, 21, 28, 0.98) 100%
+            );
             border: 1px solid #2d3742;
-            border-radius: 8px;
-            padding: 14px;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow:
+                0 12px 28px rgba(0, 0, 0, 0.22),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(
+                180deg,
+                rgba(61, 126, 255, 0.95) 0%,
+                rgba(120, 185, 255, 0.65) 100%
+            );
+            opacity: 0.9;
         }
 
         .stats-card-title {
+            margin: 0 0 14px;
+            padding-left: 10px;
             font-size: 15px;
             font-weight: bold;
-            margin-bottom: 12px;
+            color: #f4f7fb;
+            letter-spacing: 0.2px;
         }
+		
+		.stats-card-compact {
+			padding-top: 10px;
+			padding-bottom: 10px;
+			align-self: start;
+		}
+
+			.stats-card-compact .stats-card-title {
+				margin-bottom: 6px;
+		}
+
+			.stats-card-compact .stats-metric-row {
+				padding: 4px 0;
+		}
 
         .stats-metric-row {
             display: flex;
+            align-items: baseline;
             justify-content: space-between;
             gap: 12px;
-            margin-bottom: 8px;
+            padding: 10px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .stats-metric-row:first-child {
+            border-top: 0;
+            padding-top: 0;
         }
 
         .stats-metric-row:last-child {
-            margin-bottom: 0;
+            padding-bottom: 0;
         }
 
         .stats-metric-label {
             color: #b5bcc4;
+            font-size: 13px;
+            line-height: 1.35;
         }
 
         .stats-metric-value {
+            font-size: 20px;
             font-weight: bold;
             color: #eef2f5;
+            text-align: right;
+            white-space: nowrap;
         }
 
         .stats-results {
             margin-top: 16px;
         }
 
-        .empty {
-            padding: 20px;
+        #stats-results .empty {
+            padding: 18px 16px;
+            border-radius: 12px;
+            border: 1px dashed rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.03);
             color: #c8d0d7;
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-card {
+                padding: 14px;
+            }
+
+            .stats-selection-heading {
+                padding: 12px 14px;
+                font-size: 16px;
+            }
+
+            .stats-metric-value {
+                font-size: 18px;
+            }
         }
     </style>
 </head>
@@ -1366,19 +1470,24 @@ if ($settingsMessage !== '' || $settingsError !== '') {
                 <div class="form-group">
                     <label for="stats-region-select">Assigned Region<?= count($assignedRegions) > 1 ? 's' : '' ?></label>
                     <?php if (count($assignedRegions) > 1): ?>
-                        <select id="stats-region-select">
-                            <option value="">Choose a region</option>
+                        <input
+                            type="text"
+                            id="stats-region-select"
+                            list="stats-region-assigned-options"
+                            placeholder="Enter one or more assigned regions, separated by commas"
+                            value=""
+                            autocomplete="off"
+                        >
+                        <datalist id="stats-region-assigned-options">
                             <?php foreach ($assignedRegions as $assignedRegion): ?>
-                                <option value="<?= htmlspecialchars($assignedRegion, ENT_QUOTES, 'UTF-8') ?>">
-                                    <?= htmlspecialchars($assignedRegion, ENT_QUOTES, 'UTF-8') ?>
-                                </option>
+                                <option value="<?= htmlspecialchars($assignedRegion, ENT_QUOTES, 'UTF-8') ?>"></option>
                             <?php endforeach; ?>
-                        </select>
+                        </datalist>
                     <?php else: ?>
                         <input type="text" id="stats-region-select" value="<?= htmlspecialchars($defaultStatsRegion, ENT_QUOTES, 'UTF-8') ?>" readonly>
                     <?php endif; ?>
                 </div>
-                <div class="settings-note">Stats access is limited to the region assignments on your account.</div>
+                <div class="settings-note">Stats access is limited to the region assignments on your account. Enter multiple assigned regions separated by commas.</div>
             <?php endif; ?>
         </div>
 
@@ -1459,7 +1568,7 @@ if ($settingsMessage !== '' || $settingsError !== '') {
                     <label for="new_timezone">Timezone</label>
                     <select id="new_timezone" name="new_timezone">
                         <?php foreach ($timezoneOptions as $timezoneOption): ?>
-                            <option value="<?= htmlspecialchars($timezoneOption, ENT_QUOTES, 'UTF-8') ?>" <?= $timezoneOption === 'America/Los_Angeles' ? 'selected' : '' ?>>
+                            <option value="<?= htmlspecialchars($timezoneOption, ENT_QUOTES, 'UTF-8') ?>" <?= $timezoneOption === 'America/Denver' ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($timezoneOption, ENT_QUOTES, 'UTF-8') ?>
                             </option>
                         <?php endforeach; ?>
@@ -1534,7 +1643,7 @@ if ($settingsMessage !== '' || $settingsError !== '') {
                         $managedUserId = (int)$managedUser['id'];
                         $managedUserUsername = (string)$managedUser['username'];
                         $managedUserRegions = (string)($managedUser['regions'] ?? '');
-                        $managedUserTimezone = safeTimezone((string)($managedUser['timezone'] ?? 'America/Los_Angeles'));
+                        $managedUserTimezone = safeTimezone((string)($managedUser['timezone'] ?? 'America/Denver'));
                         $managedUserDisplayName = (string)($managedUser['display_name'] ?? $managedUserUsername);
                         $managedUserCanViewAll = ((int)$managedUser['can_view_all'] === 1);
                         $managedUserIsActive = ((int)$managedUser['is_active'] === 1);

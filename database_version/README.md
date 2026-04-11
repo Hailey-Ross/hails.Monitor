@@ -142,6 +142,7 @@ View detailed analytics for one or multiple regions.
 
 #### ⏱️ Visit Duration
 - **Average Visit Duration**
+  - Last 12 Hours
   - Last 24 Hours
   - Last Week
   - Last Month

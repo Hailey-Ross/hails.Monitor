@@ -119,6 +119,45 @@ Features:
 - Session-based analytics
 - Avatar name verification (lookup users not seen recently to check for name changes)
 
+#### 📊 Region Stats Panel
+
+View detailed analytics for one or multiple regions.
+
+#### 🧭 Region Selection
+- Supports comma-separated region input
+- Preserves input order when displaying results
+- Duplicate regions are ignored automatically
+- Invalid or unauthorized regions are skipped silently
+- Displays a single warning if any regions were skipped
+
+#### 👥 Visitor Metrics
+- **Unique Visitors**
+- **Peak Visitors** 
+  - Last Hour
+  - Last 12 Hours
+  - Last 24 Hours
+  - Last Week
+  - Last Month
+  - Last Year
+
+#### ⏱️ Visit Duration
+- **Average Visit Duration**
+  - Last 24 Hours
+  - Last Week
+  - Last Month
+  - Last Year
+
+#### 🕒 Activity Insights
+- **Most Active Hour**
+- **Least Active Hour**
+	- Last 12 Hours
+	- Last 24 Hours
+	- Last Week
+	- Last Month
+	- Last Year
+
+_All activity times are displayed in the user's selected timezone._
+
 ---
 
 ## ⚡️ Setup Instructions

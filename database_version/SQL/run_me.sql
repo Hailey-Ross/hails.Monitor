@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS `avatar_sessions` (
   KEY `idx_visit_start` (`visit_start`),
   KEY `idx_source_range` (`source_first_change_log_id`,`source_last_change_log_id`),
   KEY `idx_avatar_region` (`avatar_key`,`region_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=16309 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=27881 DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `avatar_visits` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `avatar_visits` (
   KEY `idx_avatar_visits_last_seen_desc` (`last_seen`),
   KEY `idx_avatar_visits_last_seen` (`last_seen`),
   KEY `idx_avatar_visits_region_lastseen` (`region_name`,`last_seen`)
-) ENGINE=MyISAM AUTO_INCREMENT=10294 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=11067 DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `change_log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `change_log` (
   KEY `idx_change_log_tbl_op_time` (`table_name`,`operation`,`change_time`),
   KEY `idx_change_log_region_avatar_time` (`region_name_gc`,`avatar_key_gc`,`change_time`),
   KEY `idx_change_log_tbl_op_id` (`table_name`,`operation`,`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=3486564 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=5226513 DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `compression_state` (
   `job_name` varchar(100) NOT NULL,
@@ -148,6 +148,37 @@ BEGIN
 END//
 DELIMITER ;
 
+-- Dumping structure for procedure hailsmonitor.purge_region_data_multi
+DELIMITER //
+CREATE PROCEDURE `purge_region_data_multi`(
+    IN p_region_list TEXT,
+    IN p_preview_only TINYINT(1)
+)
+BEGIN
+    DECLARE v_region VARCHAR(255);
+    DECLARE v_pos INT DEFAULT 0;
+
+    -- Loop through comma-separated list
+    WHILE LENGTH(p_region_list) > 0 DO
+
+        SET v_pos = LOCATE(',', p_region_list);
+
+        IF v_pos = 0 THEN
+            SET v_region = TRIM(p_region_list);
+            SET p_region_list = '';
+        ELSE
+            SET v_region = TRIM(SUBSTRING(p_region_list, 1, v_pos - 1));
+            SET p_region_list = SUBSTRING(p_region_list, v_pos + 1);
+        END IF;
+
+        -- Call your existing procedure
+        CALL purge_region_data(v_region, p_preview_only);
+
+    END WHILE;
+END//
+DELIMITER ;
+
+-- Dumping structure for table hailsmonitor.region_scanners
 CREATE TABLE IF NOT EXISTS `region_scanners` (
   `region_name` varchar(255) NOT NULL,
   `scanner_key` varchar(36) NOT NULL,
@@ -161,6 +192,9 @@ CREATE TABLE IF NOT EXISTS `region_scanners` (
   KEY `idx_last_checkin` (`last_checkin`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Data exporting was unselected.
+
+-- Dumping structure for trigger hailsmonitor.log_changes_after_delete
 SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
 DELIMITER //
 CREATE TRIGGER log_changes_after_delete
@@ -179,6 +213,7 @@ END//
 DELIMITER ;
 SET SQL_MODE=@OLDTMP_SQL_MODE;
 
+-- Dumping structure for trigger hailsmonitor.log_changes_after_insert
 SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
 DELIMITER //
 CREATE TRIGGER log_changes_after_insert
@@ -197,6 +232,7 @@ END//
 DELIMITER ;
 SET SQL_MODE=@OLDTMP_SQL_MODE;
 
+-- Dumping structure for trigger hailsmonitor.log_changes_after_update
 SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
 DELIMITER //
 CREATE TRIGGER log_changes_after_update
@@ -215,3 +251,9 @@ BEGIN
 END//
 DELIMITER ;
 SET SQL_MODE=@OLDTMP_SQL_MODE;
+
+/*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
+/*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
+/*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40111 SET SQL_NOTES=IFNULL(@OLD_SQL_NOTES, 1) */;

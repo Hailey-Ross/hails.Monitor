@@ -1,6 +1,18 @@
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET NAMES utf8 */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+
+-- Dumping database structure for hailsmonitor
 CREATE DATABASE IF NOT EXISTS `hailsmonitor` /*!40100 DEFAULT CHARACTER SET utf8 */;
 USE `hailsmonitor`;
 
+-- Dumping structure for table hailsmonitor.avatar_sessions
 CREATE TABLE IF NOT EXISTS `avatar_sessions` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `avatar_key` char(36) NOT NULL,
@@ -20,6 +32,9 @@ CREATE TABLE IF NOT EXISTS `avatar_sessions` (
   KEY `idx_avatar_region` (`avatar_key`,`region_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=27881 DEFAULT CHARSET=utf8mb4;
 
+
+
+-- Dumping structure for table hailsmonitor.avatar_visits
 CREATE TABLE IF NOT EXISTS `avatar_visits` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `avatar_name` varchar(255) DEFAULT NULL,
@@ -36,6 +51,9 @@ CREATE TABLE IF NOT EXISTS `avatar_visits` (
   KEY `idx_avatar_visits_region_lastseen` (`region_name`,`last_seen`)
 ) ENGINE=MyISAM AUTO_INCREMENT=11067 DEFAULT CHARSET=utf8;
 
+
+
+-- Dumping structure for table hailsmonitor.change_log
 CREATE TABLE IF NOT EXISTS `change_log` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `table_name` varchar(255) DEFAULT NULL,
@@ -49,8 +67,11 @@ CREATE TABLE IF NOT EXISTS `change_log` (
   KEY `idx_change_log_tbl_op_time` (`table_name`,`operation`,`change_time`),
   KEY `idx_change_log_region_avatar_time` (`region_name_gc`,`avatar_key_gc`,`change_time`),
   KEY `idx_change_log_tbl_op_id` (`table_name`,`operation`,`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=5226513 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=5227472 DEFAULT CHARSET=utf8;
 
+
+
+-- Dumping structure for table hailsmonitor.compression_state
 CREATE TABLE IF NOT EXISTS `compression_state` (
   `job_name` varchar(100) NOT NULL,
   `last_processed_id` int(10) unsigned NOT NULL DEFAULT '0',
@@ -58,6 +79,9 @@ CREATE TABLE IF NOT EXISTS `compression_state` (
   PRIMARY KEY (`job_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+
+
+-- Dumping structure for table hailsmonitor.monitor_user_regions
 CREATE TABLE IF NOT EXISTS `monitor_user_regions` (
   `user_id` int(10) unsigned NOT NULL,
   `region_name` varchar(255) NOT NULL,
@@ -67,6 +91,9 @@ CREATE TABLE IF NOT EXISTS `monitor_user_regions` (
   CONSTRAINT `fk_monitor_user_regions_user` FOREIGN KEY (`user_id`) REFERENCES `monitor_users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+
+
+-- Dumping structure for table hailsmonitor.monitor_users
 CREATE TABLE IF NOT EXISTS `monitor_users` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(100) NOT NULL,
@@ -82,6 +109,9 @@ CREATE TABLE IF NOT EXISTS `monitor_users` (
   KEY `idx_monitor_active` (`is_active`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4;
 
+
+
+-- Dumping structure for procedure hailsmonitor.purge_region_data
 DELIMITER //
 CREATE PROCEDURE `purge_region_data`(
     IN p_region_name VARCHAR(255),
@@ -151,14 +181,13 @@ DELIMITER ;
 -- Dumping structure for procedure hailsmonitor.purge_region_data_multi
 DELIMITER //
 CREATE PROCEDURE `purge_region_data_multi`(
-    IN p_region_list TEXT,
-    IN p_preview_only TINYINT(1)
+	IN `p_region_list` TEXT,
+	IN `p_preview_only` TINYINT(1)
 )
 BEGIN
     DECLARE v_region VARCHAR(255);
     DECLARE v_pos INT DEFAULT 0;
 
-    -- Loop through comma-separated list
     WHILE LENGTH(p_region_list) > 0 DO
 
         SET v_pos = LOCATE(',', p_region_list);
@@ -171,7 +200,6 @@ BEGIN
             SET p_region_list = SUBSTRING(p_region_list, v_pos + 1);
         END IF;
 
-        -- Call your existing procedure
         CALL purge_region_data(v_region, p_preview_only);
 
     END WHILE;
@@ -192,7 +220,7 @@ CREATE TABLE IF NOT EXISTS `region_scanners` (
   KEY `idx_last_checkin` (`last_checkin`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Data exporting was unselected.
+
 
 -- Dumping structure for trigger hailsmonitor.log_changes_after_delete
 SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';

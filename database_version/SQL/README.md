@@ -1,6 +1,6 @@
 # SQL Directory Overview
 
-## 📌 What This Database Does
+## What This Database Does
 
 This database is designed to track and analyze avatar activity over time.
 
@@ -19,7 +19,7 @@ Most of the logic in this directory supports that workflow, with `run_me.sql` es
 
 ---
 
-## 🧱 `run_me.sql` (REQUIRED FIRST)
+## `run_me.sql` (REQUIRED FIRST)
 
 **Purpose:**  
 This is the **core setup script**. It creates the entire database structure, including all tables, indexes, and triggers required for the system to function.
@@ -40,14 +40,14 @@ This is the **core setup script**. It creates the entire database structure, inc
 - Establishes the `change_log` system, which is the backbone for tracking all data changes and powering analytics
 
 **When to run:**
-- ✅ First-time setup (required)
-- ✅ Rebuilding the database from scratch
+- First-time setup (required)
+- Rebuilding the database from scratch
 
 **Do not skip this step.** All other scripts in this directory demand that these tables and triggers exist.
 
 ---
 
-## 📊 `change_log_stats.sql`
+## `change_log_stats.sql`
 
 **Purpose:**  
 Provides a **high-level summary** of activity in the `change_log` table.
@@ -66,7 +66,7 @@ Provides a **high-level summary** of activity in the `change_log` table.
 
 ---
 
-## 📊 `changelog_op_stats.sql`
+## `changelog_op_stats.sql`
 
 **Purpose:**  
 Breaks down `change_log` activity by **table and operation type**.
@@ -84,7 +84,7 @@ Breaks down `change_log` activity by **table and operation type**.
 
 ---
 
-## 🗜️ `compression_ratio_query.sql`
+## `compression_ratio_query.sql`
 
 **Purpose:**  
 Measures the effectiveness of session compression.
@@ -101,7 +101,7 @@ Measures the effectiveness of session compression.
 
 ---
 
-## ⚙️ `optimize_table.sql`
+## `optimize_table.sql`
 
 **Purpose:**  
 Performs maintenance on the `change_log` table.
@@ -117,7 +117,7 @@ Performs maintenance on the `change_log` table.
 
 ---
 
-# Recommended Workflow
+# Recommended build order
 
 1. **Initialize the database**
    - Run `run_me.sql`

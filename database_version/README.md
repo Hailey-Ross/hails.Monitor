@@ -11,23 +11,23 @@ This project has evolved significantly from earlier versions and now includes:
 
 ---
 
-## 🖼️ Preview
+## Preview
 
 <img width="1920" height="964" alt="web-ui-preview" src="https://github.com/user-attachments/assets/c5088f59-13de-459a-bc9e-cf7273419558" />
 
-### 📊 Compression Stats  
+### Compression Stats  
 *Prior to this update, my database had ballooned to around 1.2~1.3 GiB. After running the compression cronjob, the entire database is now down to 7.8 MiB*
 
 <img width="1570" height="498" alt="compression stats" src="https://github.com/user-attachments/assets/7bec3883-7154-4353-a721-3f551f677893" />
 
-### 💽 Table Size Breakdown
+### Table Size Breakdown
 *Here is the breakdown of each tables size after the compression was run.*
 
 <img width="270" height="270" alt="db-size-breakdown" src="https://github.com/user-attachments/assets/7af6a56e-0110-4950-85c6-64dba45cf6c2" />
 
 ---
 
-## 📦 What You'll Need:
+## What You'll Need:
 
 - **Webserver (Required)**
   - Apache or Nginx recommended
@@ -42,14 +42,14 @@ This project has evolved significantly from earlier versions and now includes:
 
 ---
 
-## ✅ Optional but Recommended:
+## Optional but Recommended:
 
 - Grafana (for advanced analytics)
 - HTTPS/SSL (strongly recommended for security)
 
 ---
 
-## 🚨 CRITICAL SECURITY NOTES:
+## CRITICAL SECURITY NOTES:
 
 - **ALL config files MUST be stored in a secure, non-public directory.**
   - Example: `/usr/www/yourdomain/secure/config.php`
@@ -61,7 +61,7 @@ This project has evolved significantly from earlier versions and now includes:
 
 ---
 
-## 🧠 Project Overview
+## Project Overview
 
 This system works in multiple stages:
 
@@ -119,18 +119,18 @@ Features:
 - Session-based analytics
 - Avatar name verification (lookup users not seen recently to check for name changes)
 
-#### 📊 Region Stats Panel
+#### Region Stats Panel
 
 View detailed analytics for one or multiple regions.
 
-#### 🧭 Region Selection
+#### Region Selection
 - Supports comma-separated region input
 - Preserves input order when displaying results
 - Duplicate regions are ignored automatically
 - Invalid or unauthorized regions are skipped silently
 - Displays a single warning if any regions were skipped
 
-#### 👥 Visitor Metrics
+#### Visitor Metrics
 - **Unique Visitors**
 - **Peak Visitors** 
   - Last Hour
@@ -161,7 +161,7 @@ _All activity times are displayed in the user's selected timezone._
 
 ---
 
-## ⚡️ Setup Instructions
+## Setup Instructions
 
 ### 1. Download Files
 
@@ -318,7 +318,7 @@ Log in using the credentials for the user you just created.
 
 ---
 
-## 🔐 Authentication System
+## Authentication System
 
 Supports:
 - User roles:
@@ -331,7 +331,7 @@ Supports:
 
 ---
 
-## 📊 Data Flow Summary
+## Data Flow Summary
 
 1. LSL → sends avatar data
 2. `av.php` → stores raw visits
@@ -342,7 +342,7 @@ Supports:
 
 ---
 
-## 🧹 Maintenance Notes
+## Maintenance Notes
 
 - Monitor log file sizes (`phpcron.txt`)
 - Ensure cron jobs are running
@@ -365,18 +365,18 @@ Supports:
 
 ---
 
-## ⚠️ Common Mistakes
+## Common Mistakes
 
-- ❌ Putting `config.php` in public directory
-- ❌ Forgetting to set API key everywhere
-- ❌ Not running cron jobs
-- ❌ Incorrect file paths to config
-- ❌ Missing database indexes
-- ❌ Not rotating API-Keys or Passwords when exposed
+- Putting `config.php` in public directory
+- Forgetting to set API key everywhere
+- Not running cron jobs
+- Incorrect file paths to config
+- Missing database indexes
+- Not rotating API-Keys or Passwords when exposed
 
 ---
 
-## 🛠️ Notes
+## Notes
 
 - This project assumes moderate familiarity with:
   - PHP
@@ -387,7 +387,7 @@ Supports:
 
 ---
 
-## 🧾 Final Notes
+## Final Notes
 
 This is no longer a simple visit tracker, it is a **full monitoring platform**.
 

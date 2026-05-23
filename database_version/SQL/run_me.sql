@@ -1,28 +1,60 @@
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET NAMES utf8 */;
-/*!50503 SET NAMES utf8mb4 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+CREATE DATABASE IF NOT EXISTS `mtnbound_avscanner` /*!40100 DEFAULT CHARACTER SET utf8mb3 */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `mtnbound_avscanner`;
 
+CREATE TABLE IF NOT EXISTS `attachments_current` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `avatar_uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `avatar_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attachment_uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attachment_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attachment_desc` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `attached_point` int NOT NULL DEFAULT '0',
+  `data_hash` char(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `first_seen_utc` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `changed_utc` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_avatar_attachment` (`avatar_uuid`,`attachment_uuid`),
+  KEY `idx_avatar_uuid` (`avatar_uuid`),
+  KEY `idx_attachment_uuid` (`attachment_uuid`),
+  KEY `idx_data_hash` (`data_hash`),
+  KEY `idx_changed_utc` (`changed_utc`),
+  KEY `idx_avatar_name` (`avatar_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=282 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping database structure for hailsmonitor
-CREATE DATABASE IF NOT EXISTS `hailsmonitor` /*!40100 DEFAULT CHARACTER SET utf8 */;
-USE `hailsmonitor`;
+CREATE TABLE IF NOT EXISTS `stale_attachments` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `current_row_id` bigint unsigned NOT NULL,
+  `avatar_uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `avatar_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attachment_uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attachment_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attachment_desc` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  `attached_point` int NOT NULL DEFAULT '0',
+  `data_hash` char(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `first_seen_utc` datetime NOT NULL,
+  `changed_utc` datetime NOT NULL,
+  `stale_moved_utc` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_current_row_id` (`current_row_id`),
+  KEY `idx_avatar_uuid` (`avatar_uuid`),
+  KEY `idx_attachment_uuid` (`attachment_uuid`),
+  KEY `idx_stale_moved_utc` (`stale_moved_utc`),
+  KEY `idx_changed_utc` (`changed_utc`)
+) ENGINE=InnoDB AUTO_INCREMENT=91 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping structure for table hailsmonitor.avatar_sessions
+CREATE DATABASE IF NOT EXISTS `mtnbound_hailsmonitor` /*!40100 DEFAULT CHARACTER SET utf8mb3 */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `mtnbound_hailsmonitor`;
+
 CREATE TABLE IF NOT EXISTS `avatar_sessions` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `avatar_key` char(36) NOT NULL,
   `region_name` varchar(191) NOT NULL,
   `visit_start` datetime NOT NULL,
   `visit_end` datetime NOT NULL,
-  `heartbeat_count` int(10) unsigned NOT NULL DEFAULT '1',
-  `duration_seconds` int(10) unsigned NOT NULL DEFAULT '0',
-  `source_first_change_log_id` int(10) unsigned NOT NULL,
-  `source_last_change_log_id` int(10) unsigned NOT NULL,
+  `heartbeat_count` int unsigned NOT NULL DEFAULT '1',
+  `duration_seconds` int unsigned NOT NULL DEFAULT '0',
+  `source_first_change_log_id` int unsigned NOT NULL,
+  `source_last_change_log_id` int unsigned NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_avatar_region_start` (`avatar_key`,`region_name`,`visit_start`),
@@ -30,13 +62,10 @@ CREATE TABLE IF NOT EXISTS `avatar_sessions` (
   KEY `idx_visit_start` (`visit_start`),
   KEY `idx_source_range` (`source_first_change_log_id`,`source_last_change_log_id`),
   KEY `idx_avatar_region` (`avatar_key`,`region_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=27881 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=32296 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-
-
--- Dumping structure for table hailsmonitor.avatar_visits
 CREATE TABLE IF NOT EXISTS `avatar_visits` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL AUTO_INCREMENT,
   `avatar_name` varchar(255) DEFAULT NULL,
   `avatar_key` varchar(36) DEFAULT NULL,
   `region_name` varchar(255) DEFAULT NULL,
@@ -49,53 +78,41 @@ CREATE TABLE IF NOT EXISTS `avatar_visits` (
   KEY `idx_avatar_visits_last_seen_desc` (`last_seen`),
   KEY `idx_avatar_visits_last_seen` (`last_seen`),
   KEY `idx_avatar_visits_region_lastseen` (`region_name`,`last_seen`)
-) ENGINE=MyISAM AUTO_INCREMENT=11067 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=12868 DEFAULT CHARSET=utf8mb3;
 
-
-
--- Dumping structure for table hailsmonitor.change_log
 CREATE TABLE IF NOT EXISTS `change_log` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL AUTO_INCREMENT,
   `table_name` varchar(255) DEFAULT NULL,
   `operation` varchar(50) DEFAULT NULL,
   `old_data` json DEFAULT NULL,
   `new_data` json DEFAULT NULL,
   `change_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `region_name_gc` varchar(255) GENERATED ALWAYS AS (json_unquote(json_extract(`new_data`,'$.region_name'))) STORED,
-  `avatar_key_gc` varchar(36) GENERATED ALWAYS AS (json_unquote(json_extract(`new_data`,'$.avatar_key'))) STORED,
+  `region_name_gc` varchar(255) GENERATED ALWAYS AS (json_unquote(json_extract(`new_data`,_utf8mb4'$.region_name'))) STORED,
+  `avatar_key_gc` varchar(36) GENERATED ALWAYS AS (json_unquote(json_extract(`new_data`,_utf8mb4'$.avatar_key'))) STORED,
   PRIMARY KEY (`id`),
   KEY `idx_change_log_tbl_op_time` (`table_name`,`operation`,`change_time`),
   KEY `idx_change_log_region_avatar_time` (`region_name_gc`,`avatar_key_gc`,`change_time`),
   KEY `idx_change_log_tbl_op_id` (`table_name`,`operation`,`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=5227472 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=6439871 DEFAULT CHARSET=utf8mb3;
 
-
-
--- Dumping structure for table hailsmonitor.compression_state
 CREATE TABLE IF NOT EXISTS `compression_state` (
   `job_name` varchar(100) NOT NULL,
-  `last_processed_id` int(10) unsigned NOT NULL DEFAULT '0',
+  `last_processed_id` int unsigned NOT NULL DEFAULT '0',
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`job_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-
-
--- Dumping structure for table hailsmonitor.monitor_user_regions
 CREATE TABLE IF NOT EXISTS `monitor_user_regions` (
-  `user_id` int(10) unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
   `region_name` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`user_id`,`region_name`),
   KEY `idx_region_name` (`region_name`),
   CONSTRAINT `fk_monitor_user_regions_user` FOREIGN KEY (`user_id`) REFERENCES `monitor_users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-
-
--- Dumping structure for table hailsmonitor.monitor_users
 CREATE TABLE IF NOT EXISTS `monitor_users` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(100) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `display_name` varchar(150) DEFAULT NULL,
@@ -107,11 +124,8 @@ CREATE TABLE IF NOT EXISTS `monitor_users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_monitor_username` (`username`),
   KEY `idx_monitor_active` (`is_active`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-
-
--- Dumping structure for procedure hailsmonitor.purge_region_data
 DELIMITER //
 CREATE PROCEDURE `purge_region_data`(
     IN p_region_name VARCHAR(255),
@@ -178,7 +192,6 @@ BEGIN
 END//
 DELIMITER ;
 
--- Dumping structure for procedure hailsmonitor.purge_region_data_multi
 DELIMITER //
 CREATE PROCEDURE `purge_region_data_multi`(
 	IN `p_region_list` TEXT,
@@ -206,7 +219,6 @@ BEGIN
 END//
 DELIMITER ;
 
--- Dumping structure for table hailsmonitor.region_scanners
 CREATE TABLE IF NOT EXISTS `region_scanners` (
   `region_name` varchar(255) NOT NULL,
   `scanner_key` varchar(36) NOT NULL,
@@ -218,17 +230,11 @@ CREATE TABLE IF NOT EXISTS `region_scanners` (
   PRIMARY KEY (`region_name`),
   KEY `idx_scanner_key` (`scanner_key`),
   KEY `idx_last_checkin` (`last_checkin`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-
-
--- Dumping structure for trigger hailsmonitor.log_changes_after_delete
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
+SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 DELIMITER //
-CREATE TRIGGER log_changes_after_delete
-AFTER DELETE ON avatar_visits
-FOR EACH ROW
-BEGIN
+CREATE TRIGGER `log_changes_after_delete` AFTER DELETE ON `avatar_visits` FOR EACH ROW BEGIN
    INSERT INTO change_log(table_name, operation, old_data, new_data)
    VALUES (
       'avatar_visits', 
@@ -241,13 +247,9 @@ END//
 DELIMITER ;
 SET SQL_MODE=@OLDTMP_SQL_MODE;
 
--- Dumping structure for trigger hailsmonitor.log_changes_after_insert
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
+SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 DELIMITER //
-CREATE TRIGGER log_changes_after_insert
-AFTER INSERT ON avatar_visits
-FOR EACH ROW
-BEGIN
+CREATE TRIGGER `log_changes_after_insert` AFTER INSERT ON `avatar_visits` FOR EACH ROW BEGIN
    INSERT INTO change_log(table_name, operation, old_data, new_data)
    VALUES (
       'avatar_visits', 
@@ -260,13 +262,9 @@ END//
 DELIMITER ;
 SET SQL_MODE=@OLDTMP_SQL_MODE;
 
--- Dumping structure for trigger hailsmonitor.log_changes_after_update
-SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
+SET @OLDTMP_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 DELIMITER //
-CREATE TRIGGER log_changes_after_update
-AFTER UPDATE ON avatar_visits
-FOR EACH ROW
-BEGIN
+CREATE TRIGGER `log_changes_after_update` AFTER UPDATE ON `avatar_visits` FOR EACH ROW BEGIN
    INSERT INTO change_log(table_name, operation, old_data, new_data)
    VALUES (
       'avatar_visits', 
@@ -279,9 +277,3 @@ BEGIN
 END//
 DELIMITER ;
 SET SQL_MODE=@OLDTMP_SQL_MODE;
-
-/*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
-/*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
-/*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40111 SET SQL_NOTES=IFNULL(@OLD_SQL_NOTES, 1) */;

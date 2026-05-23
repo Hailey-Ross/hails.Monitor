@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS `mtnbound_hailsmonitor` /*!40100 DEFAULT CHARACTER SET utf8mb3 */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `mtnbound_hailsmonitor`;
+CREATE DATABASE IF NOT EXISTS `hailsmonitor` /*!40100 DEFAULT CHARACTER SET utf8mb3 */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `hailsmonitor`;
 
 CREATE TABLE IF NOT EXISTS `avatar_sessions` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,

@@ -6,10 +6,10 @@
 View the READMEs in the individual folders.
 
 - Database Version [README](https://github.com/Hailey-Ross/hails.Monitor/blob/main/database_version/README.md)  
-  <sup>✅ Recommended</sup>
+  <sup>Recommended</sup>
 
 - Standalone [README](https://github.com/Hailey-Ross/hails.Monitor/blob/main/README.md)  
-  <sup>❌ Not recommended</sup>  
+  <sup>Not recommended</sup>  
 
 ### Dashboard Preview
 <sup><ins>ONLY</ins> for the **Database Version**</sup>  
